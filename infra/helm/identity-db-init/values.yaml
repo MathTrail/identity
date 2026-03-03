@@ -1,0 +1,8 @@
+db:
+  databases:
+    - name: kratos
+      vaultPrivileges: false
+    - name: hydra
+      vaultPrivileges: false
+    - name: keto
+      vaultPrivileges: false
