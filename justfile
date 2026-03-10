@@ -5,6 +5,8 @@ set dotenv-load
 set dotenv-path := "/etc/mathtrail/platform.env"
 set export
 
+export SKAFFOLD_DEFAULT_REPO := env_var("REGISTRY")
+
 NAMESPACE := env_var("NAMESPACE")
 SERVICE := "identity-ui"
 CHART_NAME := "identity-ui"
