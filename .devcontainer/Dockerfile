@@ -15,7 +15,10 @@ RUN bash -c "curl -sL https://raw.githubusercontent.com/ory/meta/master/install.
     && bash -c "curl -sL https://raw.githubusercontent.com/ory/meta/master/install.sh | sh -s -- -b /usr/local/bin keto" \
     && bash -c "curl -sL https://raw.githubusercontent.com/ory/meta/master/install.sh | sh -s -- -b /usr/local/bin oathkeeper"
 
-# Pre-configure Docker daemon to trust the k3d registry
+# Install buildah
+RUN apt-get update && apt-get install -y buildah && rm -rf /var/lib/apt/lists/*
+
+# Pre-configure buildah to trust the k3d registry
 RUN mkdir -p /etc/containers/registries.conf.d && \
     printf '[registry]\nlocation = "k3d-mathtrail-registry.localhost:5050"\ninsecure = true\n' \
     > /etc/containers/registries.conf.d/k3d.conf
