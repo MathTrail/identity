@@ -15,10 +15,19 @@ RUN bash -c "curl -sL https://raw.githubusercontent.com/ory/meta/master/install.
     && bash -c "curl -sL https://raw.githubusercontent.com/ory/meta/master/install.sh | sh -s -- -b /usr/local/bin keto" \
     && bash -c "curl -sL https://raw.githubusercontent.com/ory/meta/master/install.sh | sh -s -- -b /usr/local/bin oathkeeper"
 
-# Install buildah
-RUN apt-get update && apt-get install -y buildah && rm -rf /var/lib/apt/lists/*
+# Install buildah with fuse-overlayfs for nested container builds
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends buildah fuse-overlayfs \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /etc/containers \
+    && printf '[storage]\ndriver = "overlay"\n\n' \
+       '[storage.options.overlay]\nmount_program = "/usr/bin/fuse-overlayfs"\n' \
+       > /etc/containers/storage.conf
 
-# Pre-configure buildah to trust the k3d registry
+# Pre-configure buildah to trust the k3d registry and resolve short image names
+ARG K3D_REGISTRY=k3d-mathtrail-registry.localhost:5050
 RUN mkdir -p /etc/containers/registries.conf.d && \
-    printf '[registry]\nlocation = "k3d-mathtrail-registry.localhost:5050"\ninsecure = true\n' \
-    > /etc/containers/registries.conf.d/k3d.conf
+    printf '[[registry]]\nlocation = "%s"\ninsecure = true\n' "${K3D_REGISTRY}" \
+    > /etc/containers/registries.conf.d/k3d.conf && \
+    printf 'unqualified-search-registries = ["docker.io"]\n' \
+    > /etc/containers/registries.conf
