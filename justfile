@@ -101,12 +101,7 @@ revoke-monitoring USER_ID:
 check-monitoring USER_ID:
     curl -sf -X POST http://localhost:4466/relation-tuples/check \
       -H "Content-Type: application/json" \
-      -d '{
-        "namespace": "Monitoring",
-        "object": "ui",
-        "relation": "viewer",
-        "subject_id": "{{ USER_ID }}"
-      }' | jq .
+      -d '{"namespace":"Monitoring","object":"ui","relation":"viewer","subject_id":"{{ USER_ID }}"}' | jq .
 
 # List all users with monitoring access
 list-monitoring:
