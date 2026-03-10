@@ -1,0 +1,65 @@
+# IngressRoute: single entry point → Oathkeeper proxy (auth/authz).
+# Traefik applies middlewares (rate limit, CB, security headers),
+# Oathkeeper routes further to identity-ui, mentor-api, Grafana, Pyroscope.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: mathtrail
+  namespace: kube-system
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    # Auth endpoints — strict rate limit (brute-force protection)
+    - match: Host(`mathtrail.localhost`) && PathPrefix(`/auth/`)
+      kind: Rule
+      middlewares:
+        - name: rate-limit-auth
+          namespace: kube-system
+        - name: security-headers
+          namespace: kube-system
+      services:
+        - name: oathkeeper-proxy
+          namespace: mathtrail
+          port: 4455
+          serversTransport: oathkeeper-transport
+
+    # API and Swagger — relaxed rate limit + circuit breaker
+    - match: Host(`mathtrail.localhost`) && (PathPrefix(`/api/`) || PathPrefix(`/swagger/`))
+      kind: Rule
+      middlewares:
+        - name: rate-limit-api
+          namespace: kube-system
+        - name: circuit-breaker
+          namespace: kube-system
+        - name: security-headers
+          namespace: kube-system
+      services:
+        - name: oathkeeper-proxy
+          namespace: mathtrail
+          port: 4455
+          serversTransport: oathkeeper-transport
+
+    # Observability — Keto authorization check is performed inside Oathkeeper
+    - match: Host(`mathtrail.localhost`) && PathPrefix(`/observability/`)
+      kind: Rule
+      middlewares:
+        - name: rate-limit-api
+          namespace: kube-system
+        - name: security-headers
+          namespace: kube-system
+      services:
+        - name: oathkeeper-proxy
+          namespace: mathtrail
+          port: 4455
+          serversTransport: oathkeeper-transport
+
+    # Health — no auth or rate limit (required for liveness/readiness probes)
+    - match: Host(`mathtrail.localhost`) && PathPrefix(`/health/`)
+      kind: Rule
+      services:
+        - name: oathkeeper-proxy
+          namespace: mathtrail
+          port: 4455
+  tls:
+    secretName: mathtrail-tls-secret

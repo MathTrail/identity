@@ -14,6 +14,9 @@ oathkeeper:
           force_method: GET
           only:
             - ory_kratos_session
+          cache:
+            enabled: true
+            ttl: 60s
       bearer_token:
         enabled: true
         config:

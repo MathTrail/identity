@@ -17,10 +17,6 @@ hydra:
       consent: http://localhost:8090/auth/consent
       logout: http://localhost:8090/auth/logout
 
-    secrets:
-      system:
-        - mathtrail-dev-secret-change-in-production
-
     oidc:
       subject_identifiers:
         supported_types:
@@ -28,6 +24,12 @@ hydra:
 
     log:
       level: info
+
+  # Secrets managed externally via Vault KV + ExternalSecret.
+  # ExternalSecret 'hydra-external-secret' in namespace mathtrail creates the K8s Secret.
+  secret:
+    enabled: false
+    nameOverride: hydra-external-secret
 
   automigration:
     enabled: true
