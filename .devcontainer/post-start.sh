@@ -24,7 +24,7 @@ else
 fi
 
 # Install Node dependencies for Identity UI
-cd /workspaces/mathtrail-identity/identity-ui && npm ci 2>/dev/null || true
+cd /workspaces/identity/identity-ui && npm ci 2>/dev/null || true
 
 # Verify cluster connection
 kubectl cluster-info 2>/dev/null && echo "Connected to cluster" \

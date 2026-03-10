@@ -24,13 +24,13 @@ manifests:
 
 deploy:
   kubectl:
-    defaultNamespace: "{{.NAMESPACE}}"
+    defaultNamespace: "{{.IDENTITY_NAMESPACE}}"
   helm:
     releases:
       # --- Database initialisation (must run before Ory services) ---
       - name: identity-db-init
         chartPath: infra/helm/identity-db-init
-        namespace: "{{.NAMESPACE}}"
+        namespace: "{{.IDENTITY_NAMESPACE}}"
         createNamespace: true
         wait: true
         setValues:
@@ -40,7 +40,7 @@ deploy:
       - name: kratos
         repo: "{{.CHARTS_REPO}}"
         remoteChart: kratos
-        namespace: "{{.NAMESPACE}}"
+        namespace: "{{.IDENTITY_NAMESPACE}}"
         createNamespace: true
         valuesFiles:
           - values/kratos-values.yaml
@@ -49,7 +49,7 @@ deploy:
       - name: hydra
         repo: "{{.CHARTS_REPO}}"
         remoteChart: hydra
-        namespace: "{{.NAMESPACE}}"
+        namespace: "{{.IDENTITY_NAMESPACE}}"
         valuesFiles:
           - values/hydra-values.yaml
         wait: true
@@ -57,7 +57,7 @@ deploy:
       - name: keto
         repo: "{{.CHARTS_REPO}}"
         remoteChart: keto
-        namespace: "{{.NAMESPACE}}"
+        namespace: "{{.IDENTITY_NAMESPACE}}"
         valuesFiles:
           - values/keto-values.yaml
         wait: true
@@ -65,7 +65,7 @@ deploy:
       - name: oathkeeper
         repo: "{{.CHARTS_REPO}}"
         remoteChart: oathkeeper
-        namespace: "{{.NAMESPACE}}"
+        namespace: "{{.IDENTITY_NAMESPACE}}"
         valuesFiles:
           - values/oathkeeper-values.yaml
         wait: true
@@ -73,7 +73,7 @@ deploy:
       # --- Identity UI (custom service, library chart) ---
       - name: identity-ui
         chartPath: infra/helm/identity-ui
-        namespace: "{{.NAMESPACE}}"
+        namespace: "{{.IDENTITY_NAMESPACE}}"
         wait: true
         valuesFiles:
           - infra/helm/identity-ui/values.yaml
@@ -85,47 +85,47 @@ deploy:
 portForward:
   - resourceType: service
     resourceName: kratos-public
-    namespace: "{{.NAMESPACE}}"
+    namespace: "{{.IDENTITY_NAMESPACE}}"
     port: 4433
     localPort: 4433
   - resourceType: service
     resourceName: kratos-admin
-    namespace: "{{.NAMESPACE}}"
+    namespace: "{{.IDENTITY_NAMESPACE}}"
     port: 4434
     localPort: 4434
   - resourceType: service
     resourceName: hydra-public
-    namespace: "{{.NAMESPACE}}"
+    namespace: "{{.IDENTITY_NAMESPACE}}"
     port: 4444
     localPort: 4444
   - resourceType: service
     resourceName: hydra-admin
-    namespace: "{{.NAMESPACE}}"
+    namespace: "{{.IDENTITY_NAMESPACE}}"
     port: 4445
     localPort: 4445
   - resourceType: service
     resourceName: keto-read
-    namespace: "{{.NAMESPACE}}"
+    namespace: "{{.IDENTITY_NAMESPACE}}"
     port: 4466
     localPort: 4466
   - resourceType: service
     resourceName: keto-write
-    namespace: "{{.NAMESPACE}}"
+    namespace: "{{.IDENTITY_NAMESPACE}}"
     port: 4467
     localPort: 4467
   - resourceType: service
     resourceName: oathkeeper-proxy
-    namespace: "{{.NAMESPACE}}"
+    namespace: "{{.IDENTITY_NAMESPACE}}"
     port: 4455
     localPort: 4455
   - resourceType: service
     resourceName: oathkeeper-api
-    namespace: "{{.NAMESPACE}}"
+    namespace: "{{.IDENTITY_NAMESPACE}}"
     port: 4456
     localPort: 4456
   - resourceType: service
     resourceName: identity-ui
-    namespace: "{{.NAMESPACE}}"
+    namespace: "{{.IDENTITY_NAMESPACE}}"
     port: 8080
     localPort: 8090
 
@@ -147,14 +147,14 @@ deploy:
   helm:
     releases:
       - name: identity-postgres
-        namespace: "{{.NAMESPACE}}"
+        namespace: "{{.IDENTITY_NAMESPACE}}"
         chartPath: infra/local/helm/identity-postgres
         createNamespace: true
         wait: true
         skipBuildDependencies: true
 
       - name: identity-pgbouncer
-        namespace: "{{.NAMESPACE}}"
+        namespace: "{{.IDENTITY_NAMESPACE}}"
         chartPath: infra/local/helm/identity-pgbouncer
         createNamespace: true
         wait: true

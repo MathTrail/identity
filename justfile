@@ -7,7 +7,7 @@ set export
 
 export SKAFFOLD_DEFAULT_REPO := env_var("REGISTRY")
 
-NAMESPACE := env_var("NAMESPACE")
+NAMESPACE := env_var("IDENTITY_NAMESPACE")
 SERVICE := "identity-ui"
 CHART_NAME := "identity-ui"
 
