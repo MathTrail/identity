@@ -5,8 +5,8 @@ metadata:
 
 build:
   local:
-    push: false
-    tryImportMissing: false
+    push: true
+    tryImportMissing: true
   insecureRegistries:
     - ${REGISTRY}
   artifacts:
