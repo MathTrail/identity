@@ -12,7 +12,7 @@ build:
   artifacts:
     - image: identity-ui
       custom:
-        buildCommand: buildah bud --tag $IMAGE . && buildah push --tls-verify=false $IMAGE
+        buildCommand: buildah --storage-driver=vfs bud --tag $IMAGE . && buildah --storage-driver=vfs push --tls-verify=false $IMAGE
         dependencies:
           paths:
             - identity-ui/
