@@ -12,9 +12,9 @@ Pyroscope (прямой, без auth)	http://localhost:4040
 OTel Zipkin endpoint	http://localhost:9411
 Шаг 2: Запустить Identity Stack
 
-cd d:/Projects/MathTrail/identity-api
+cd d:/Projects/MathTrail/identity
 just dev
-Добавляются port-forward-ы из identity-api/skaffold.yaml:
+Добавляются port-forward-ы из identity/skaffold.yaml:
 
 Сервис	URL
 Identity UI (логин)	http://localhost:8090
@@ -26,7 +26,7 @@ Keto Read	http://localhost:4466
 Шаг 3: Создать пользователя и выдать доступ
 
 # Создать тестового пользователя (teacher)
-cd d:/Projects/MathTrail/identity-api
+cd d:/Projects/MathTrail/identity
 just create-test-user
 
 # Получить UUID созданного пользователя
