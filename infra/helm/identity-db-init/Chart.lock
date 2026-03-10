@@ -1,6 +1,6 @@
 dependencies:
 - name: mathtrail-service-lib
   repository: https://MathTrail.github.io/charts/charts
-  version: 0.2.6
-digest: sha256:699862ebc7c8b60c16997785053b819ef11e0f732631fd0833a5c9b1e800e28e
-generated: "2026-03-10T03:48:30.893170665Z"
+  version: 0.2.7
+digest: sha256:d14d4a2ebec74f63faa366f31b2995c6cb948361a8d0242574c6407fd00eab4e
+generated: "2026-03-10T00:00:00.000000000Z"

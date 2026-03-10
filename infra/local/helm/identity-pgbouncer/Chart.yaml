@@ -1,0 +1,4 @@
+apiVersion: v2
+name: identity-pgbouncer
+description: PgBouncer for Ory identity stack (local dev only)
+version: 0.1.0

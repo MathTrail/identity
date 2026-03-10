@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: identity-pgbouncer
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: identity-pgbouncer
+    app.kubernetes.io/part-of: mathtrail
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: identity-pgbouncer
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: identity-pgbouncer
+        app.kubernetes.io/part-of: mathtrail
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9127"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: pgbouncer
+          image: {{ .Values.image.pgbouncer }}
+          ports:
+            - name: pgbouncer
+              containerPort: 6432
+          volumeMounts:
+            - name: config
+              mountPath: /etc/pgbouncer/pgbouncer.ini
+              subPath: pgbouncer.ini
+              readOnly: true
+            - name: userlist
+              mountPath: /etc/pgbouncer/userlist.txt
+              subPath: userlist.txt
+              readOnly: true
+          livenessProbe:
+            tcpSocket:
+              port: 6432
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: 6432
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+
+        - name: pgbouncer-exporter
+          image: {{ .Values.image.exporter }}
+          args:
+            - "--pgBouncer.connectionString=postgresql://pgbouncer_auth:{{ .Values.auth.password }}@localhost:6432/pgbouncer?sslmode=disable"
+          ports:
+            - name: metrics
+              containerPort: 9127
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "16Mi"
+            limits:
+              cpu: "50m"
+              memory: "32Mi"
+
+      volumes:
+        - name: config
+          configMap:
+            name: identity-pgbouncer-config
+        - name: userlist
+          secret:
+            secretName: identity-pgbouncer-userlist

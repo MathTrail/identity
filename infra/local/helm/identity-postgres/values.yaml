@@ -1,0 +1,42 @@
+# PostgreSQL local development values for Ory identity stack (Kratos, Hydra, Keto).
+# Bitnami PostgreSQL 18.5.5
+# wal_level=logical is required for Debezium CDC (pre-configured for future use).
+#
+# Three databases are created: kratos, hydra, keto.
+# The identity-db-init Helm hook (in the identity chart) handles per-db initialisation
+# (lookup_user function, GRANT CREATE ON SCHEMA public, etc.).
+
+postgresql:
+  architecture: standalone
+
+  auth:
+    postgresPassword: "mathtrail"
+    username: "mathtrail"
+    password: "mathtrail"
+    # Default database; actual Ory databases are created by identity-db-init job.
+    database: "postgres"
+
+  primary:
+    persistence:
+      enabled: true
+      size: 2Gi
+    resourcesPreset: "nano"
+
+    extendedConfiguration: |
+      wal_level = logical
+
+    initdb:
+      scripts:
+        init.sql: |
+          -- Run as postgres superuser.
+          SET SESSION AUTHORIZATION postgres;
+
+          -- Create pgbouncer_auth role (idempotent).
+          DO $$
+          BEGIN
+            IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'pgbouncer_auth') THEN
+              CREATE ROLE pgbouncer_auth WITH LOGIN PASSWORD 'pgbouncer_auth_pass';
+            END IF;
+          END $$;
+          -- NOTE: per-database initialisation (kratos, hydra, keto) is handled
+          -- by the identity-db-init Helm pre-install hook, which runs after this postgres starts.

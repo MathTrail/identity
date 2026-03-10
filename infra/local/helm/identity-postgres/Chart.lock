@@ -1,0 +1,6 @@
+dependencies:
+- name: postgresql
+  repository: https://MathTrail.github.io/charts/charts
+  version: 18.5.5
+digest: sha256:5c02374db30ffb89fc2f139e9469c8c91b34b2b329fae6c5c809e5c5bb92cd59
+generated: "2026-03-10T00:00:00.000000000Z"

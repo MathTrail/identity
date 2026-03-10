@@ -3,7 +3,7 @@
 
 hydra:
   config:
-    dsn: "postgres://mathtrail:mathtrail@postgres-pgbouncer.mathtrail:6432/hydra?sslmode=disable"
+    dsn: "postgres://mathtrail:mathtrail@identity-postgres-pgbouncer.mathtrail:6432/hydra?sslmode=disable"
 
     serve:
       public:

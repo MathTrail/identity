@@ -1,0 +1,8 @@
+apiVersion: v2
+name: identity-postgres
+description: PostgreSQL for Ory identity stack (local dev only)
+version: 0.1.0
+dependencies:
+  - name: postgresql
+    version: "18.5.5"
+    repository: "https://MathTrail.github.io/charts/charts"

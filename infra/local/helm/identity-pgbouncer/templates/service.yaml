@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  # Named identity-postgres-pgbouncer — used in Kratos/Hydra/Keto DSNs.
+  name: identity-postgres-pgbouncer
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: identity-pgbouncer
+    app.kubernetes.io/part-of: mathtrail
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  selector:
+    app.kubernetes.io/name: identity-pgbouncer
+  ports:
+    - name: pgbouncer
+      port: 6432
+      targetPort: 6432

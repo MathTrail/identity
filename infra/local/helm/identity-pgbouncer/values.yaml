@@ -1,0 +1,13 @@
+postgres:
+  host: identity-postgres-postgresql
+  port: 5432
+
+auth:
+  password: "pgbouncer_auth_pass"
+
+image:
+  pgbouncer: edoburu/pgbouncer:v1.23.1-p3
+  exporter: prometheuscommunity/pgbouncer-exporter:v0.9.0
+
+dashboard:
+  enabled: false

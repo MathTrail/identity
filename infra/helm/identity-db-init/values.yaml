@@ -1,4 +1,5 @@
 db:
+  postgresHost: postgres-postgresql
   databases:
     - name: kratos
       vaultPrivileges: false
