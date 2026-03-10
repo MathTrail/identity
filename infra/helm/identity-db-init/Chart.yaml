@@ -1,0 +1,8 @@
+apiVersion: v2
+name: identity-db-init
+description: Initialises PostgreSQL databases for Ory identity stack (Kratos, Hydra, Keto)
+version: 0.1.0
+dependencies:
+  - name: mathtrail-service-lib
+    version: "~0"
+    repository: "https://MathTrail.github.io/charts/charts"

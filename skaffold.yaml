@@ -27,6 +27,13 @@ deploy:
     defaultNamespace: "{{.NAMESPACE}}"
   helm:
     releases:
+      # --- Database initialisation (must run before Ory services) ---
+      - name: identity-db-init
+        chartPath: infra/helm/identity-db-init
+        namespace: "{{.NAMESPACE}}"
+        createNamespace: true
+        wait: true
+
       # --- Ory Infrastructure (vendored in mathtrail-charts) ---
       - name: kratos
         repo: "{{.CHARTS_REPO}}"

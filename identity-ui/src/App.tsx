@@ -5,6 +5,8 @@ import { Login } from '@/pages/Login'
 import { Registration } from '@/pages/Registration'
 import { Recovery } from '@/pages/Recovery'
 import { Verification } from '@/pages/Verification'
+import { Consent } from '@/pages/Consent'
+import { Logout } from '@/pages/Logout'
 
 export function App() {
   const initialize = useAuthStore((s) => s.initialize)
@@ -21,6 +23,8 @@ export function App() {
         <Route path="/auth/registration" element={<Registration />} />
         <Route path="/auth/recovery" element={<Recovery />} />
         <Route path="/auth/verification" element={<Verification />} />
+        <Route path="/auth/consent" element={<Consent />} />
+        <Route path="/auth/logout" element={<Logout />} />
         <Route path="*" element={<Navigate to="/auth/login" replace />} />
       </Routes>
     </BrowserRouter>

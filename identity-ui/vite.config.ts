@@ -15,6 +15,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/kratos/, ''),
       },
+      '/api/hydra-admin': {
+        target: 'http://localhost:4445',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/hydra-admin/, ''),
+      },
     },
   },
 })

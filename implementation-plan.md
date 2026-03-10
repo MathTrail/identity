@@ -75,7 +75,7 @@ Following `mathtrail-mentor/.claude/CLAUDE.md` pattern. Documents the hybrid arc
 ### 2.1 `.devcontainer/devcontainer.json`
 Based on `mathtrail-mentor/.devcontainer/devcontainer.json` with additions:
 
-- **Base features**: Go 1.25.7, Docker-in-Docker, kubectl/helm, just
+- **Base features**: Go 1.26.0, Docker-in-Docker, kubectl/helm, just
 - **Added**: Ory CLI tools installed via Dockerfile
 - **Ports**: 4433, 4434 (Kratos), 4444, 4445 (Hydra), 4466, 4467 (Keto), 4455, 4456 (Oathkeeper), 8080 (Identity UI)
 - **Extensions**: golang.go, vscode-docker, vscode-kubernetes-tools, helm, vscode-yaml, gitlens, justfile, helm-intellisense, claude-code
