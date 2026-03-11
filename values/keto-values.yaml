@@ -3,7 +3,7 @@
 
 keto:
   config:
-    dsn: "postgres://mathtrail:mathtrail@identity-postgres-pgbouncer.identity:6432/keto?sslmode=disable&prefer_simple_protocol=true"
+    dsn: "postgres://mathtrail:mathtrail@identity-postgres-pgbouncer.identity:6432/keto?sslmode=disable"
 
     namespaces:
       - id: 0

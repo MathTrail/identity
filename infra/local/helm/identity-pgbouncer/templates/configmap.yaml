@@ -10,6 +10,9 @@ metadata:
 data:
   pgbouncer.ini: |
     [databases]
+    kratos = host={{ .Values.postgres.host }} port={{ .Values.postgres.port }} pool_mode=session
+    hydra = host={{ .Values.postgres.host }} port={{ .Values.postgres.port }} pool_mode=session
+    keto = host={{ .Values.postgres.host }} port={{ .Values.postgres.port }} pool_mode=session
     * = host={{ .Values.postgres.host }} port={{ .Values.postgres.port }}
 
     [pgbouncer]

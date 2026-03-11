@@ -3,7 +3,7 @@
 
 kratos:
   config:
-    dsn: "postgres://mathtrail:mathtrail@identity-postgres-pgbouncer.identity:6432/kratos?sslmode=disable&prefer_simple_protocol=true"
+    dsn: "postgres://mathtrail:mathtrail@identity-postgres-pgbouncer.identity:6432/kratos?sslmode=disable"
 
     serve:
       public:
