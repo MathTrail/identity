@@ -1,4 +1,4 @@
-# mathtrail-identity
+# Identity
 
 Identity and access management for the MathTrail platform, built on the Ory stack.
 Handles authentication, sessions, OAuth2/OIDC flows, fine-grained authorization, and API gateway enforcement.
