@@ -1,9 +1,9 @@
 {
     "name": "MathTrail Identity DevContainer",
     "build": {
-        "dockerfile": "Dockerfile",
-        "options": ["--pull"]
+        "dockerfile": "Dockerfile"
     },
+    "initializeCommand": "docker pull ghcr.io/mathtrail/platform-env:1",
     "features": {
         "ghcr.io/devcontainers/features/node:1": {
             "version": "20"
