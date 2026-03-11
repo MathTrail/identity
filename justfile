@@ -50,10 +50,16 @@ status:
 
 # -- Testing -------------------------------------------------------------------
 
-# Create a test user via Kratos Admin API
+# Create a test user via Kratos Admin API (idempotent — skips if already exists)
 create-test-user:
     #!/bin/bash
     set -e
+    EMAIL="teacher@mathtrail.test"
+    EXISTING=$(curl -s http://localhost:4434/admin/identities | jq -r --arg e "$EMAIL" '.[] | select(.traits.email==$e) | .id')
+    if [[ -n "$EXISTING" ]]; then
+      echo "Test user already exists (id: $EXISTING), skipping."
+      exit 0
+    fi
     echo "Creating test user..."
     curl -s -X POST http://localhost:4434/admin/identities \
       -H "Content-Type: application/json" \
