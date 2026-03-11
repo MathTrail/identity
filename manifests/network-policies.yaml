@@ -15,6 +15,22 @@ spec:
   policyTypes:
     - Egress
   egress:
+    # Forward proxied requests to Identity UI (auth, health routes)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: identity-ui
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Forward proxied requests to Mentor API (api, swagger routes) in mathtrail namespace
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: mathtrail
+      ports:
+        - protocol: TCP
+          port: 8080
     # Kratos session validation (intra-namespace)
     - to:
         - podSelector:

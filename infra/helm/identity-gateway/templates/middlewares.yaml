@@ -1,0 +1,55 @@
+# Middlewares for mathtrail.localhost IngressRoute.
+# Duplicated from traefik-config (kube-system) into {{ .Values.identityNamespace }}
+# because Traefik requires middlewares to be in the same namespace as IngressRoute.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: rate-limit-auth
+  namespace: {{ .Values.identityNamespace }}
+spec:
+  rateLimit:
+    average: 10
+    burst: 20
+    period: 1s
+    sourceCriterion:
+      ipStrategy:
+        depth: 1
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: rate-limit-api
+  namespace: {{ .Values.identityNamespace }}
+spec:
+  rateLimit:
+    average: 100
+    burst: 200
+    period: 1s
+    sourceCriterion:
+      ipStrategy:
+        depth: 1
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: circuit-breaker
+  namespace: {{ .Values.identityNamespace }}
+spec:
+  circuitBreaker:
+    expression: ResponseCodeRatio(500, 600, 0, 600) > 0.30
+    checkPeriod: 10s
+    fallbackDuration: 30s
+    recoveryDuration: 10s
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: security-headers
+  namespace: {{ .Values.identityNamespace }}
+spec:
+  headers:
+    stsSeconds: 31536000
+    stsIncludeSubdomains: true
+    frameDeny: true
+    contentTypeNosniff: true
+    browserXssFilter: true

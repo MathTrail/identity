@@ -78,6 +78,19 @@ oathkeeper:
       mutators:
         - handler: noop
 
+    - id: "mathtrail-assets-rule"
+      upstream:
+        url: "http://identity-ui:8080"
+      match:
+        methods: ["GET"]
+        url: "<http|https>://<.*>/assets/<.*>"
+      authenticators:
+        - handler: anonymous
+      authorizer:
+        handler: allow
+      mutators:
+        - handler: noop
+
     - id: "mathtrail-auth-ui-rule"
       upstream:
         url: "http://identity-ui:8080"

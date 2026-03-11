@@ -1,0 +1,3 @@
+hostname: mathtrail.localhost
+identityNamespace: identity
+issuerName: mathtrail-internal-ca-issuer

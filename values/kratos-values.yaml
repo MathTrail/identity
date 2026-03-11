@@ -7,16 +7,16 @@ kratos:
 
     serve:
       public:
-        base_url: http://localhost:4433/
+        base_url: https://mathtrail.localhost/api/kratos/
         cors:
           enabled: true
       admin:
         base_url: http://kratos-admin:4434/
 
     selfservice:
-      default_browser_return_url: http://localhost:8090/
+      default_browser_return_url: https://mathtrail.localhost/auth/login
       allowed_return_urls:
-        - http://localhost:8090
+        - https://mathtrail.localhost
 
       methods:
         password:
@@ -24,19 +24,19 @@ kratos:
 
       flows:
         login:
-          ui_url: http://localhost:8090/auth/login
+          ui_url: https://mathtrail.localhost/auth/login
         registration:
-          ui_url: http://localhost:8090/auth/registration
+          ui_url: https://mathtrail.localhost/auth/registration
           after:
             password:
               hooks:
                 - hook: session
         recovery:
           enabled: true
-          ui_url: http://localhost:8090/auth/recovery
+          ui_url: https://mathtrail.localhost/auth/recovery
         verification:
           enabled: true
-          ui_url: http://localhost:8090/auth/verification
+          ui_url: https://mathtrail.localhost/auth/verification
 
     identity:
       default_schema_id: mathtrail-user

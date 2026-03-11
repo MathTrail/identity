@@ -1,0 +1,4 @@
+apiVersion: v2
+name: identity-gateway
+description: Cluster-wide Traefik IngressRoute and TLS certificate for mathtrail.localhost
+version: 0.1.0

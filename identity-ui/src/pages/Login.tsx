@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { LoginFlow } from '@ory/client'
 import { kratos } from '@/lib/kratos'
+import { useAuthStore } from '@/store/auth'
 import { Node } from '@/components/ory/Node'
 import {
   Card,
@@ -12,19 +13,49 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { AuthLayout } from '@/components/auth/AuthLayout'
+import { Button } from '@/components/ui/button'
 
 export function Login() {
   const [searchParams] = useSearchParams()
   const [flow, setFlow] = useState<LoginFlow | null>(null)
+  const session = useAuthStore((s) => s.session)
+  const logout = useAuthStore((s) => s.logout)
 
   useEffect(() => {
+    if (session) return
     const flowId = searchParams.get('flow')
     if (!flowId) {
       window.location.href = '/api/kratos/self-service/login/browser'
       return
     }
-    kratos.getLoginFlow({ id: flowId }).then(({ data }) => setFlow(data))
-  }, [searchParams])
+    kratos.getLoginFlow({ id: flowId })
+      .then(({ data }) => setFlow(data))
+      .catch(() => {
+        window.location.href = '/api/kratos/self-service/login/browser'
+      })
+  }, [searchParams, session])
+
+  if (session) {
+    const handleLogout = () => {
+      logout()
+      window.location.href = '/api/kratos/self-service/logout/browser'
+    }
+    return (
+      <AuthLayout>
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">Already signed in</CardTitle>
+            <CardDescription>
+              {session.identity?.traits?.email}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-center">
+            <Button onClick={handleLogout} variant="outline">Sign out</Button>
+          </CardContent>
+        </Card>
+      </AuthLayout>
+    )
+  }
 
   if (!flow) return null
 

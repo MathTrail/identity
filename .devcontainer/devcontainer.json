@@ -41,5 +41,5 @@
         }
     },
     "postStartCommand": "bash .devcontainer/post-start.sh",
-    "forwardPorts": [3000, 4433, 4434, 4444, 4445, 4466, 4467, 4455, 4456, 8080]
+    "forwardPorts": [3000, 4433, 4434, 4444, 4445, 4466, 4467, 4455, 4456, 8090]
 }

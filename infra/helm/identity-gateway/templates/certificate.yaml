@@ -1,0 +1,17 @@
+# TLS certificate for Traefik IngressRoute.
+# Dev: internal CA (mathtrail-internal-ca-issuer from cert-manager-config, wave 2).
+# Prod: replace issuerRef with letsencrypt ClusterIssuer and dnsNames with the real domain.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: mathtrail-tls
+  namespace: {{ .Values.identityNamespace }}
+spec:
+  secretName: mathtrail-tls-secret
+  duration: 8760h     # 1 year
+  renewBefore: 720h   # 30 days
+  dnsNames:
+    - {{ .Values.hostname }}
+  issuerRef:
+    name: {{ .Values.issuerName }}
+    kind: ClusterIssuer

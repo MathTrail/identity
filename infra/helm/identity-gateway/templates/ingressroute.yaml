@@ -5,77 +5,70 @@ apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   name: mathtrail
-  namespace: kube-system
+  namespace: {{ .Values.identityNamespace }}
 spec:
   entryPoints:
     - websecure
   routes:
     # Kratos + Hydra Admin API — proxied via identity-ui nginx (same-origin cookies)
-    # Must come BEFORE the generic /api/ rule
-    - match: Host(`mathtrail.localhost`) && PathPrefix(`/api/kratos/`)
+    # priority: 200 ensures these win over the generic /api/ rule (Traefik picks by rule string length)
+    - match: Host(`{{ .Values.hostname }}`) && PathPrefix(`/api/kratos/`)
       kind: Rule
+      priority: 200
       services:
         - name: identity-ui
-          namespace: identity
           port: 8080
 
-    - match: Host(`mathtrail.localhost`) && PathPrefix(`/api/hydra-admin/`)
+    - match: Host(`{{ .Values.hostname }}`) && PathPrefix(`/api/hydra-admin/`)
       kind: Rule
+      priority: 200
       services:
         - name: identity-ui
-          namespace: identity
           port: 8080
 
     # Auth endpoints — strict rate limit (brute-force protection)
-    - match: Host(`mathtrail.localhost`) && PathPrefix(`/auth/`)
+    - match: Host(`{{ .Values.hostname }}`) && PathPrefix(`/auth/`)
       kind: Rule
       middlewares:
         - name: rate-limit-auth
-          namespace: kube-system
         - name: security-headers
-          namespace: kube-system
       services:
         - name: oathkeeper-proxy
-          namespace: identity
           port: 4455
-          serversTransport: oathkeeper-transport
+
+    # Static assets (JS, CSS) served by identity-ui via Oathkeeper
+    - match: Host(`{{ .Values.hostname }}`) && PathPrefix(`/assets/`)
+      kind: Rule
+      services:
+        - name: oathkeeper-proxy
+          port: 4455
 
     # API and Swagger — relaxed rate limit + circuit breaker
-    - match: Host(`mathtrail.localhost`) && (PathPrefix(`/api/`) || PathPrefix(`/swagger/`))
+    - match: Host(`{{ .Values.hostname }}`) && (PathPrefix(`/api/`) || PathPrefix(`/swagger/`))
       kind: Rule
       middlewares:
         - name: rate-limit-api
-          namespace: kube-system
         - name: circuit-breaker
-          namespace: kube-system
         - name: security-headers
-          namespace: kube-system
       services:
         - name: oathkeeper-proxy
-          namespace: identity
           port: 4455
-          serversTransport: oathkeeper-transport
 
     # Observability — Keto authorization check is performed inside Oathkeeper
-    - match: Host(`mathtrail.localhost`) && PathPrefix(`/observability/`)
+    - match: Host(`{{ .Values.hostname }}`) && PathPrefix(`/observability/`)
       kind: Rule
       middlewares:
         - name: rate-limit-api
-          namespace: kube-system
         - name: security-headers
-          namespace: kube-system
       services:
         - name: oathkeeper-proxy
-          namespace: identity
           port: 4455
-          serversTransport: oathkeeper-transport
 
     # Health — no auth or rate limit (required for liveness/readiness probes)
-    - match: Host(`mathtrail.localhost`) && PathPrefix(`/health/`)
+    - match: Host(`{{ .Values.hostname }}`) && PathPrefix(`/health/`)
       kind: Rule
       services:
         - name: oathkeeper-proxy
-          namespace: identity
           port: 4455
   tls:
     secretName: mathtrail-tls-secret

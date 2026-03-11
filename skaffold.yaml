@@ -6,7 +6,7 @@ metadata:
 build:
   local:
     push: true
-    tryImportMissing: true
+    tryImportMissing: false
   insecureRegistries:
     - ${REGISTRY}
   artifacts:
@@ -27,6 +27,13 @@ deploy:
     defaultNamespace: "{{.IDENTITY_NAMESPACE}}"
   helm:
     releases:
+      # --- Gateway: TLS cert + IngressRoute + middlewares (all in identity namespace) ---
+      - name: identity-gateway
+        chartPath: infra/helm/identity-gateway
+        namespace: "{{.IDENTITY_NAMESPACE}}"
+        createNamespace: true
+        wait: true
+
       # --- Database initialisation (must run before Ory services) ---
       - name: identity-db-init
         chartPath: infra/helm/identity-db-init

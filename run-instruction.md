@@ -4,9 +4,23 @@
 
 Все сервисы деплоятся в namespace **`identity`**.
 
-| Сервис | URL (port-forward) |
-|--------|-------------------|
-| Identity UI | http://localhost:8090 |
+k3d кластер создаётся с `--port 80:80@loadbalancer --port 443:443@loadbalancer`, поэтому Traefik доступен напрямую — port-forward для публичного трафика **не нужен**.
+
+Публичный доступ через Traefik → Oathkeeper (без port-forward):
+
+| Путь | Сервис |
+|------|--------|
+| https://mathtrail.localhost/auth/ | Identity UI |
+| https://mathtrail.localhost/health/ | Identity UI (health) |
+| https://mathtrail.localhost/api/ | Mentor API |
+| https://mathtrail.localhost/swagger/mentor/ | Mentor API Swagger |
+| https://mathtrail.localhost/observability/grafana/ | Grafana |
+| https://mathtrail.localhost/observability/pyroscope/ | Pyroscope |
+
+Административные API (Internal, port-forward автоматически через `just dev`):
+
+| Сервис | URL |
+|--------|-----|
 | Kratos Public | http://localhost:4433 |
 | Kratos Admin | http://localhost:4434 |
 | Hydra Public | http://localhost:4444 |
@@ -15,20 +29,24 @@
 | Keto Write | http://localhost:4467 |
 | Oathkeeper Proxy | http://localhost:4455 |
 | Oathkeeper API | http://localhost:4456 |
+| Identity UI (direct) | http://localhost:8090 |
 
 ---
 
 ## Шаг 1: Запуск стека
 
 ```bash
-cd /workspaces/identity
+cd /home/alex/projects/mathtrail/identity
 
-# Запустить всё с hot-reload и port-forward
+# Запустить всё с hot-reload + port-forward для admin API
 just dev
 
-# Или разово задеплоить без hot-reload
+# Или разово задеплоить (публичные URL через Traefik работают без port-forward)
 just deploy
 ```
+
+> **`just dev`** запускает `skaffold dev --port-forward`, который автоматически пробрасывает все административные порты (Kratos Admin :4434, Keto :4466/:4467 и др.) — они нужны для команд `just create-test-user`, `just grant-monitoring` и т.д.
+> Публичный трафик через `https://mathtrail.localhost` работает через Traefik и не требует port-forward.
 
 ---
 
@@ -82,7 +100,7 @@ just revoke-monitoring <uuid>
 
 ## Шаг 4: Вход и проверка UI
 
-1. Открыть http://localhost:8090/auth/login
+1. Открыть https://mathtrail.localhost/auth/login
 2. Войти как `teacher@mathtrail.test` / `test1234!`
 3. Браузер получит cookie `ory_kratos_session`
 
@@ -90,8 +108,8 @@ just revoke-monitoring <uuid>
 
 | UI | URL |
 |----|-----|
-| Grafana | http://localhost:4455/observability/grafana/ |
-| Pyroscope | http://localhost:4455/observability/pyroscope/ |
+| Grafana | https://mathtrail.localhost/observability/grafana/ |
+| Pyroscope | https://mathtrail.localhost/observability/pyroscope/ |
 
 ---
 
@@ -111,8 +129,8 @@ curl -s http://localhost:4456/rules | jq '.[].id'
 # 401 без сессии
 curl -o /dev/null -w "%{http_code}" \
   -H "X-Forwarded-Method: GET" \
-  -H "X-Forwarded-Host: localhost" \
-  -H "X-Forwarded-Proto: http" \
+  -H "X-Forwarded-Host: mathtrail.localhost" \
+  -H "X-Forwarded-Proto: https" \
   -H "X-Forwarded-Url: /observability/grafana/" \
   http://localhost:4456/decisions
 # Ожидаем: 401
@@ -120,8 +138,8 @@ curl -o /dev/null -w "%{http_code}" \
 # Проверить заголовки для конкретной сессии
 curl -s http://localhost:4456/decisions \
   -H "X-Forwarded-Method: GET" \
-  -H "X-Forwarded-Host: localhost" \
-  -H "X-Forwarded-Proto: http" \
+  -H "X-Forwarded-Host: mathtrail.localhost" \
+  -H "X-Forwarded-Proto: https" \
   -H "X-Forwarded-Url: /observability/grafana/" \
   -H "Cookie: ory_kratos_session=<session-token>" \
   -v 2>&1 | grep "X-Webauth"
@@ -156,9 +174,9 @@ curl -s http://admin:mathtrail@localhost:3000/api/org/users \
 # Проверить health endpoints
 just test
 
-# Или вручную
-curl -s http://localhost:8090/health/ready   # → {"status":"ready"}
-curl -s http://localhost:8090/health/liveness # → {"status":"ok"}
+# Или вручную (через Traefik, без port-forward)
+curl -sk https://mathtrail.localhost/health/ready   # → {"status":"ready"}
+curl -sk https://mathtrail.localhost/health/liveness # → {"status":"ok"}
 ```
 
 ---
