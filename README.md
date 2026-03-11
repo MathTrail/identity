@@ -11,15 +11,15 @@ graph LR
 
     subgraph IdentityStack ["Identity Stack (ns: identity)"]
         direction TB
-        UI["Identity UI\n:8090"]
-        OK["Oathkeeper\nProxy :4455"]
-        Kratos["Kratos\nPublic :4433\nAdmin :4434"]
-        Hydra["Hydra\nPublic :4444\nAdmin :4445"]
-        Keto["Keto\nRead :4466\nWrite :4467"]
+        UI["Identity UI<br/>:8090"]
+        OK["Oathkeeper<br/>Proxy :4455"]
+        Kratos["Kratos<br/>Public :4433<br/>Admin :4434"]
+        Hydra["Hydra<br/>Public :4444<br/>Admin :4445"]
+        Keto["Keto<br/>Read :4466<br/>Write :4467"]
 
         subgraph Storage ["Data Layer"]
             direction TB
-            PGB["PgBouncer\n:6432"] --> PG[("PostgreSQL\nkratos / hydra / keto")]
+            PGB["PgBouncer<br/>:6432"] --> PG[("PostgreSQL<br/>kratos / hydra / keto")]
         end
 
         Kratos --> PGB
