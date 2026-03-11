@@ -31,6 +31,8 @@ hydra:
     enabled: false
     nameOverride: hydra-external-secret
 
+  dev: true
+
   automigration:
     enabled: true
     type: job
