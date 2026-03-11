@@ -25,6 +25,8 @@ kratos:
       flows:
         login:
           ui_url: https://mathtrail.localhost/auth/login
+          after:
+            default_browser_return_url: https://mathtrail.localhost/auth/login
         registration:
           ui_url: https://mathtrail.localhost/auth/registration
           after:

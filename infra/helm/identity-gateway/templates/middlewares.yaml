@@ -8,8 +8,8 @@ metadata:
   namespace: {{ .Values.identityNamespace }}
 spec:
   rateLimit:
-    average: 10
-    burst: 20
+    average: {{ .Values.rateLimitAuth.average }}
+    burst: {{ .Values.rateLimitAuth.burst }}
     period: 1s
     sourceCriterion:
       ipStrategy:

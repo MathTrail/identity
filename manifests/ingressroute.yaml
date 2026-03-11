@@ -77,5 +77,14 @@ spec:
         - name: oathkeeper-proxy
           namespace: identity
           port: 4455
+
+    # SPA catch-all — static assets (/assets/, /favicon.ico, etc.)
+    # Must be last (least specific). No rate-limit to avoid throttling asset loads.
+    - match: Host(`mathtrail.localhost`) && PathPrefix(`/`)
+      kind: Rule
+      services:
+        - name: identity-ui
+          namespace: identity
+          port: 8080
   tls:
     secretName: mathtrail-tls-secret

@@ -1,3 +1,8 @@
 hostname: mathtrail.localhost
 identityNamespace: identity
 issuerName: mathtrail-internal-ca-issuer
+
+# Rate limits — permissive for local dev, override in prod values
+rateLimitAuth:
+  average: 100
+  burst: 200
