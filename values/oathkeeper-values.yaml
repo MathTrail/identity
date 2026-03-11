@@ -59,7 +59,7 @@ oathkeeper:
 
     access_rules:
       repositories:
-        - file:///etc/rules/access-rules.yaml
+        - file:///etc/rules/access-rules.json
 
     log:
       level: info

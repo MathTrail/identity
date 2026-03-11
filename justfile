@@ -29,6 +29,7 @@ deploy: setup
 # Remove everything from cluster
 delete:
     skaffold delete
+    kubectl delete jobs --all -n {{ NAMESPACE }} --ignore-not-found
 
 # View Identity UI pod logs
 logs:
