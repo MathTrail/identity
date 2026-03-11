@@ -20,7 +20,7 @@ spec:
           namespace: kube-system
       services:
         - name: oathkeeper-proxy
-          namespace: mathtrail
+          namespace: identity
           port: 4455
           serversTransport: oathkeeper-transport
 
@@ -36,7 +36,7 @@ spec:
           namespace: kube-system
       services:
         - name: oathkeeper-proxy
-          namespace: mathtrail
+          namespace: identity
           port: 4455
           serversTransport: oathkeeper-transport
 
@@ -50,7 +50,7 @@ spec:
           namespace: kube-system
       services:
         - name: oathkeeper-proxy
-          namespace: mathtrail
+          namespace: identity
           port: 4455
           serversTransport: oathkeeper-transport
 
@@ -59,7 +59,7 @@ spec:
       kind: Rule
       services:
         - name: oathkeeper-proxy
-          namespace: mathtrail
+          namespace: identity
           port: 4455
   tls:
     secretName: mathtrail-tls-secret

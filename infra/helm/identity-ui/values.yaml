@@ -23,3 +23,15 @@ rollout:
   strategy: ""
   steps: []
   autoPromotionEnabled: true
+
+volumes:
+  - name: nginx-cache
+    emptyDir: {}
+  - name: nginx-run
+    emptyDir: {}
+
+volumeMounts:
+  - name: nginx-cache
+    mountPath: /var/cache/nginx
+  - name: nginx-run
+    mountPath: /var/run
