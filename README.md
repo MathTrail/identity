@@ -1,42 +1,115 @@
 # mathtrail-identity
-Identity and access management built on the Ory stack — handles authentication, authorization, sessions, and OAuth2 flows.
 
-## Mission & Responsibilities
-- User registration and login (Ory Kratos)
-- OAuth2 / OIDC provider (Ory Hydra)
-- Fine-grained authorization (Ory Keto — relation tuples)
-- API gateway authorization (Ory Oathkeeper)
-- Self-service UI for login/registration/settings (Identity UI — React/Vite)
-
-## Tech Stack
-- **Auth**: Ory Kratos (identity), Ory Hydra (OAuth2), Ory Keto (permissions), Ory Oathkeeper (API gateway)
-- **UI**: React 19, TypeScript, Vite 6, Tailwind CSS 4, shadcn/ui, Zustand
-- **Build**: Multi-stage Docker (Node 20 builder → nginx alpine)
+Identity and access management for the MathTrail platform, built on the Ory stack.
+Handles authentication, sessions, OAuth2/OIDC flows, fine-grained authorization, and API gateway enforcement.
 
 ## Architecture
-Identity is split into infrastructure (Ory services deployed from remote charts) and UI (local React app):
-- Ory components communicate internally via K8s services
-- Identity UI is a SPA that talks to Kratos via nginx reverse proxy
-- Oathkeeper sits in front of all APIs for token validation
 
-## API & Communication
-- **Inbound**: Browser → Identity UI → Kratos APIs
-- **Outbound**: Kratos webhook → mathtrail-profile (registration event)
-- **Publishes**: `identity.registration.completed` (via webhook → Kafka)
+```mermaid
+graph LR
+    Browser(["Browser / Client"])
 
-## Data Persistence
-- **PostgreSQL**: Kratos identities, Hydra clients, Keto relations (each has own DB)
+    subgraph IdentityStack ["Identity Stack (ns: identity)"]
+        direction TB
+        UI["Identity UI\n:8090"]
+        OK["Oathkeeper\nProxy :4455"]
+        Kratos["Kratos\nPublic :4433\nAdmin :4434"]
+        Hydra["Hydra\nPublic :4444\nAdmin :4445"]
+        Keto["Keto\nRead :4466\nWrite :4467"]
+
+        subgraph Storage ["Data Layer"]
+            direction TB
+            PGB["PgBouncer\n:6432"] --> PG[("PostgreSQL\nkratos / hydra / keto")]
+        end
+
+        Kratos --> PGB
+        Hydra --> PGB
+        Keto --> PGB
+    end
+
+    subgraph Downstream ["Downstream Services"]
+        direction TB
+        MentorAPI["mentor-api"]
+        Grafana["Grafana"]
+        Pyroscope["Pyroscope"]
+    end
+
+    subgraph Secrets ["Secrets"]
+        direction TB
+        Vault["Vault"] --> ESO["ESO"]
+    end
+
+    Browser -- "self-service flows" --> UI
+    UI -- "/api/kratos proxy" --> Kratos
+    Browser -- "all API traffic" --> OK
+    OK -- "whoami check" --> Kratos
+    OK -- "authz check" --> Keto
+    OK -- "proxy" --> MentorAPI
+    OK -- "proxy + X-Webauth-*" --> Grafana
+    OK -- "proxy" --> Pyroscope
+    Hydra -- "consent UI" --> UI
+    ESO -- "DSN secrets" --> Kratos & Hydra & Keto
+
+    %% Styling
+    classDef authCls fill:#b45309,stroke:#f59e0b,color:#fff
+    classDef svc fill:#5b21b6,stroke:#7c3aed,color:#fff
+    classDef rbacCls fill:#166534,stroke:#22c55e,color:#fff
+    classDef dataCls fill:#1e3a5f,stroke:#3b82f6,color:#fff
+    classDef secretCls fill:#7f1d1d,stroke:#ef4444,color:#fff
+    classDef actorCls fill:#1e1b4b,stroke:#818cf8,color:#fff
+    classDef dstCls fill:#1c1917,stroke:#78716c,color:#fff
+
+    class OK,Kratos authCls
+    class UI,Hydra svc
+    class Keto rbacCls
+    class PGB,PG dataCls
+    class Vault,ESO secretCls
+    class Browser actorCls
+    class MentorAPI,Grafana,Pyroscope dstCls
+```
+
+## Quick Start
+
+```bash
+just dev      # Skaffold dev loop — deploys everything + port-forward
+just deploy   # One-shot deploy (no watch)
+just delete   # Tear down
+just status   # Pod health overview
+```
+
+## Services
+
+| Service | Doc | Port(s) |
+|---------|-----|---------|
+| Ory Kratos — Identity & Sessions | [docs/kratos.md](docs/kratos.md) | 4433 (public), 4434 (admin) |
+| Ory Hydra — OAuth2 / OIDC | [docs/hydra.md](docs/hydra.md) | 4444 (public), 4445 (admin) |
+| Ory Keto — Permissions (ReBAC) | [docs/keto.md](docs/keto.md) | 4466 (read), 4467 (write) |
+| Ory Oathkeeper — API Gateway | [docs/oathkeeper.md](docs/oathkeeper.md) | 4455 (proxy), 4456 (api) |
+| Identity UI — Self-service SPA | [docs/identity-ui.md](docs/identity-ui.md) | 8090 (via port-forward) |
+
+## Data
+
+Each Ory service has its own PostgreSQL database (`kratos`, `hydra`, `keto`), accessed via PgBouncer in **session mode** (required for prepared statement support).
 
 ## Secrets
-- `KRATOS_DSN` — Kratos database connection string
-- `HYDRA_DSN` — Hydra database connection string
-- Vault path: `secret/data/{env}/mathtrail-identity/`
+
+Managed via HashiCorp Vault + External Secrets Operator.
+Vault path: `secret/data/{env}/mathtrail-identity/`
 
 ## Infrastructure
-Hybrid Helm deployment: remote Ory charts + local identity-ui chart
-- `infra/helm/identity-ui/` — Custom Identity UI chart
-- `values/` — Ory component Helm values (kratos, hydra, keto, oathkeeper)
 
-## Development
-- `just dev` — Skaffold dev loop (deploys all Ory + Identity UI)
-- Identity UI: `cd identity-ui && npm run dev` (Vite dev server, port 3000)
+```
+values/               Ory Helm values (kratos, hydra, keto, oathkeeper)
+infra/helm/           Custom Helm charts
+  identity-ui/        Identity UI chart (mathtrail-service-lib based)
+  identity-db-init/   DB + role initialisation job
+infra/local/helm/     Local dev infrastructure
+  identity-postgres/  PostgreSQL
+  identity-pgbouncer/ PgBouncer
+configs/              Static config files mounted into pods
+  kratos/             identity.schema.json
+  keto/               namespaces.ts
+  oathkeeper/         access-rules.yaml
+manifests/            Raw Kubernetes manifests
+  network-policies.yaml
+```
