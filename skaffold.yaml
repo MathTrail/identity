@@ -86,12 +86,12 @@ portForward:
   - resourceType: service
     resourceName: kratos-public
     namespace: "{{.IDENTITY_NAMESPACE}}"
-    port: 4433
+    port: 80
     localPort: 4433
   - resourceType: service
     resourceName: kratos-admin
     namespace: "{{.IDENTITY_NAMESPACE}}"
-    port: 4434
+    port: 80
     localPort: 4434
   - resourceType: service
     resourceName: hydra-public
@@ -106,12 +106,12 @@ portForward:
   - resourceType: service
     resourceName: keto-read
     namespace: "{{.IDENTITY_NAMESPACE}}"
-    port: 4466
+    port: 80
     localPort: 4466
   - resourceType: service
     resourceName: keto-write
     namespace: "{{.IDENTITY_NAMESPACE}}"
-    port: 4467
+    port: 80
     localPort: 4467
   - resourceType: service
     resourceName: oathkeeper-proxy
