@@ -50,7 +50,7 @@ just deploy
 
 ---
 
-## Шаг 2: Создать тестового пользователя
+## Шаг 3: Создать тестового пользователя
 
 ```bash
 # Создаёт teacher@mathtrail.test / test1234!
@@ -76,7 +76,7 @@ curl -s http://localhost:4434/admin/identities | jq '.[] | {id, email: .traits.e
 
 ---
 
-## Шаг 3: Выдать доступ к мониторингу
+## Шаг 4: Выдать доступ к мониторингу
 
 ```bash
 # Выдать доступ конкретному пользователю
@@ -98,7 +98,7 @@ just revoke-monitoring <uuid>
 
 ---
 
-## Шаг 4: Вход и проверка UI
+## Шаг 5: Вход и проверка UI
 
 1. Открыть https://mathtrail.localhost/auth/login
 2. Войти как `teacher@mathtrail.test` / `test1234!`

@@ -13,6 +13,8 @@ interface AuthState {
   logout: () => void
 }
 
+let initPromise: Promise<void> | null = null
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
   identity: null,
@@ -28,17 +30,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   initialize: async () => {
     if (get().initialized) return
-    try {
-      const { data } = await kratos.toSession()
-      set({
-        session: data,
-        identity: data.identity,
-        loading: false,
-        initialized: true,
-      })
-    } catch {
-      set({ session: null, identity: null, loading: false, initialized: true })
-    }
+    if (initPromise) return initPromise
+    initPromise = (async () => {
+      try {
+        const { data } = await kratos.toSession()
+        set({
+          session: data,
+          identity: data.identity,
+          loading: false,
+          initialized: true,
+        })
+      } catch {
+        set({ session: null, identity: null, loading: false, initialized: true })
+      }
+    })()
+    return initPromise
   },
 
   logout: () => set({ session: null, identity: null }),

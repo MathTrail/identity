@@ -19,9 +19,10 @@ export function Login() {
   const [searchParams] = useSearchParams()
   const [flow, setFlow] = useState<LoginFlow | null>(null)
   const session = useAuthStore((s) => s.session)
-  const logout = useAuthStore((s) => s.logout)
+  const initialized = useAuthStore((s) => s.initialized)
 
   useEffect(() => {
+    if (!initialized) return
     if (session) return
     const flowId = searchParams.get('flow')
     if (!flowId) {
@@ -33,12 +34,16 @@ export function Login() {
       .catch(() => {
         window.location.href = '/api/kratos/self-service/login/browser'
       })
-  }, [searchParams, session])
+  }, [searchParams, session, initialized])
 
   if (session) {
-    const handleLogout = () => {
-      logout()
-      window.location.href = '/api/kratos/self-service/logout/browser'
+    const handleLogout = async () => {
+      try {
+        const { data } = await kratos.createBrowserLogoutFlow()
+        window.location.href = data.logout_url
+      } catch {
+        window.location.href = '/auth/login'
+      }
     }
     return (
       <AuthLayout>
