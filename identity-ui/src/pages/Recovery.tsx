@@ -58,7 +58,7 @@ export function Recovery() {
         </CardContent>
         <CardFooter className="justify-center">
           <p className="text-sm text-muted-foreground">
-            Remember your password?{' '}
+            Back to{' '}
             <Link
               to="/auth/login"
               className="text-primary underline-offset-4 hover:underline"

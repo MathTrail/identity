@@ -23,7 +23,23 @@ kratos:
 
       methods:
         password:
+          enabled: false
+        oidc:
           enabled: true
+          config:
+            providers:
+              - id: google
+                provider: google
+                client_id: "$GOOGLE_CLIENT_ID"
+                client_secret: "$GOOGLE_CLIENT_SECRET"
+                mapper_url: file:///etc/config/kratos/oidc.google.jsonnet
+                scope:
+                  - openid
+                  - email
+                  - profile
+                # Google verifies emails; trust the status so Kratos marks
+                # the address as verified immediately and creates the session.
+                trust_email_verification_status: true
 
       flows:
         login:
@@ -33,7 +49,9 @@ kratos:
         registration:
           ui_url: https://mathtrail.localhost/auth/registration
           after:
-            password:
+            # Hook runs ONLY on registration (first sign-in), not on subsequent logins.
+            # This ensures the Kafka onboarding event fires exactly once per account.
+            oidc:
               hooks:
                 - hook: session
         recovery:
@@ -69,8 +87,7 @@ kratos:
                 "title": "E-Mail",
                 "ory.sh/kratos": {
                   "recovery": { "via": "email" },
-                  "verification": { "via": "email" },
-                  "credentials": { "password": { "identifier": true } }
+                  "verification": { "via": "email" }
                 }
               },
               "name": {
@@ -82,20 +99,12 @@ kratos:
               },
               "role": {
                 "type": "string",
-                "enum": ["student", "teacher", "admin", "mentor"],
+                "enum": ["parent", "student", "teacher", "admin", "mentor"],
                 "title": "Platform Role",
                 "description": "Primary role of the user within MathTrail"
-              },
-              "school_context": {
-                "type": "object",
-                "properties": {
-                  "school_id": { "type": "string", "title": "School ID" },
-                  "class_id": { "type": "string", "title": "Current Class ID" }
-                },
-                "required": ["school_id"]
               }
             },
-            "required": ["email", "role"],
+            "required": ["email"],
             "additionalProperties": false
           }
         }
@@ -112,3 +121,26 @@ kratos:
     limits:
       cpu: 500m
       memory: 512Mi
+
+deployment:
+  # Mount the OIDC mapper ConfigMap so Kratos can read the jsonnet file.
+  extraVolumes:
+    - name: kratos-oidc-mappers
+      configMap:
+        name: kratos-oidc-mappers
+  extraVolumeMounts:
+    - name: kratos-oidc-mappers
+      mountPath: /etc/config/kratos
+      readOnly: true
+  # Inject Google OAuth2 credentials from the K8s Secret created by ExternalSecret.
+  extraEnv:
+    - name: GOOGLE_CLIENT_ID
+      valueFrom:
+        secretKeyRef:
+          name: kratos-google-oidc
+          key: client_id
+    - name: GOOGLE_CLIENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: kratos-google-oidc
+          key: client_secret

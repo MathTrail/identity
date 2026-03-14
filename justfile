@@ -50,11 +50,11 @@ status:
 
 # -- Testing -------------------------------------------------------------------
 
-# Create a test user via Kratos Admin API (idempotent — skips if already exists)
+# Create a test parent user via Kratos Admin API (idempotent — skips if already exists)
 create-test-user:
     #!/bin/bash
     set -e
-    EMAIL="teacher@mathtrail.test"
+    EMAIL="parent@mathtrail.test"
     EXISTING=$(curl -s http://localhost:4434/admin/identities | jq -r --arg e "$EMAIL" '.[] | select(.traits.email==$e) | .id')
     if [[ -n "$EXISTING" ]]; then
       echo "Test user already exists (id: $EXISTING), skipping."
@@ -66,14 +66,16 @@ create-test-user:
       -d '{
         "schema_id": "mathtrail-user",
         "traits": {
-          "email": "teacher@mathtrail.test",
-          "name": { "first": "Test", "last": "Teacher" },
-          "role": "teacher",
-          "school_context": { "school_id": "school-1", "class_id": "math-101" }
+          "email": "parent@mathtrail.test",
+          "name": { "first": "Test", "last": "Parent" },
+          "role": "parent"
         },
-        "credentials": {
-          "password": { "config": { "password": "test1234!" } }
-        }
+        "verifiable_addresses": [{
+          "value": "parent@mathtrail.test",
+          "via": "email",
+          "status": "completed",
+          "verified": true
+        }]
       }' | jq .
     echo "Test user created"
 

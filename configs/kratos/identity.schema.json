@@ -13,8 +13,7 @@
           "title": "E-Mail",
           "ory.sh/kratos": {
             "recovery": { "via": "email" },
-            "verification": { "via": "email" },
-            "credentials": { "password": { "identifier": true } }
+            "verification": { "via": "email" }
           }
         },
         "name": {
@@ -26,20 +25,12 @@
         },
         "role": {
           "type": "string",
-          "enum": ["student", "teacher", "admin", "mentor"],
+          "enum": ["parent", "student", "teacher", "admin", "mentor"],
           "title": "Platform Role",
           "description": "Primary role of the user within MathTrail"
-        },
-        "school_context": {
-          "type": "object",
-          "properties": {
-            "school_id": { "type": "string", "title": "School ID" },
-            "class_id": { "type": "string", "title": "Current Class ID" }
-          },
-          "required": ["school_id"]
         }
       },
-      "required": ["email", "role"],
+      "required": ["email"],
       "additionalProperties": false
     }
   }
