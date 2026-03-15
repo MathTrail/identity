@@ -30,7 +30,9 @@ k3d кластер создаётся с `--port 80:80@loadbalancer --port 443:4
 | Oathkeeper API | http://localhost:4456 |
 | Identity UI (direct) | http://localhost:8090 |
 
-> Kratos Public API доступен через Traefik по пути `http://localhost/api/kratos/` (порт 80, без port-forward).
+> Kratos Public API проксируется через Identity UI по пути `/api/kratos/` (без port-forward).
+> Корневой путь не возвращает данных — проверочный эндпоинт: `https://mathtrail.localhost/api/kratos/health/alive`
+>
 > Через port-forward (`just dev`) — `http://localhost:4433`.
 
 ---
