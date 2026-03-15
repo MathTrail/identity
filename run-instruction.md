@@ -6,7 +6,7 @@
 
 k3d кластер создаётся с `--port 80:80@loadbalancer --port 443:443@loadbalancer`, поэтому Traefik доступен напрямую — port-forward для публичного трафика **не нужен**.
 
-Публичный доступ через Traefik → Oathkeeper (без port-forward):
+Публичный доступ через Traefik (без port-forward):
 
 | Путь | Сервис |
 |------|--------|
@@ -21,7 +21,6 @@ k3d кластер создаётся с `--port 80:80@loadbalancer --port 443:4
 
 | Сервис | URL |
 |--------|-----|
-| Kratos Public | http://localhost:4433 |
 | Kratos Admin | http://localhost:4434 |
 | Hydra Public | http://localhost:4444 |
 | Hydra Admin | http://localhost:4445 |
@@ -31,6 +30,29 @@ k3d кластер создаётся с `--port 80:80@loadbalancer --port 443:4
 | Oathkeeper API | http://localhost:4456 |
 | Identity UI (direct) | http://localhost:8090 |
 
+> Kratos Public API доступен через Traefik по пути `http://localhost/api/kratos/` (порт 80, без port-forward).
+> Через port-forward (`just dev`) — `http://localhost:4433`.
+
+---
+
+## Шаг 0: Подготовка (один раз)
+
+Перед первым деплоем нужно создать файл с Google OAuth2 credentials:
+
+```bash
+cd /home/alex/projects/mathtrail/identity
+cp .env.example .env
+# Открыть .env и вписать GOOGLE_CLIENT_ID и GOOGLE_CLIENT_SECRET
+```
+
+Google Cloud Console → Credentials → OAuth 2.0 Client ID → Web application.
+Authorized redirect URI:
+```
+http://localhost/api/kratos/self-service/methods/oidc/callback/google
+```
+
+> Google не принимает `.localhost` как TLD. `http://localhost` — специальное исключение для local dev.
+
 ---
 
 ## Шаг 1: Запуск стека
@@ -38,25 +60,55 @@ k3d кластер создаётся с `--port 80:80@loadbalancer --port 443:4
 ```bash
 cd /home/alex/projects/mathtrail/identity
 
-# Запустить всё с hot-reload + port-forward для admin API
-just dev
-
-# Или разово задеплоить (публичные URL через Traefik работают без port-forward)
+# Задеплоить всё (включает vault seeding из .env)
 just deploy
+
+# Или запустить с hot-reload + port-forward для admin API
+just dev
 ```
 
-> **`just dev`** запускает `skaffold dev --port-forward`, который автоматически пробрасывает все административные порты (Kratos Admin :4434, Keto :4466/:4467 и др.) — они нужны для команд `just create-test-user`, `just grant-monitoring` и т.д.
-> Публичный трафик через `https://mathtrail.localhost` работает через Traefik и не требует port-forward.
+`just deploy` автоматически:
+1. Проверяет наличие `.env` с credentials
+2. Записывает Google credentials в Vault
+3. Создаёт ConfigMap и ExternalSecret до запуска Helm
+4. Запускает `skaffold run`
 
 ---
 
-## Шаг 3: Создать тестового пользователя
+## Шаг 2: Проверка что всё поднялось
 
 ```bash
-# Создаёт teacher@mathtrail.test / test1234!
+just status
+kubectl get pods -n identity
+```
+
+Все поды должны быть `Running` или `Completed` (automigrate jobs).
+
+---
+
+## Шаг 3: Вход через Google
+
+Аутентификация — **только через Google OAuth** (password login отключён).
+
+1. Открыть https://mathtrail.localhost/auth/login
+2. Нажать «Sign in with Google»
+3. Google перенаправит на `http://localhost/api/kratos/...callback...`
+4. Kratos создаст сессию и перенаправит обратно на `https://mathtrail.localhost`
+5. Браузер получит cookie `ory_kratos_session` с domain `.localhost`
+
+Новый пользователь при первом входе получает роль `parent` (задаётся в `oidc.google.jsonnet`).
+
+---
+
+## Шаг 4: Создать тестовую identity (для monitoring-тестов)
+
+`create-test-user` создаёт запись identity без credentials — пользователь должен залогиниться через Google с тем же email чтобы привязать аккаунт.
+
+```bash
+# Создаёт identity parent@mathtrail.test
 just create-test-user
 
-# Создать пользователей с другими ролями вручную
+# Создать identity с другой ролью вручную
 curl -s -X POST http://localhost:4434/admin/identities \
   -H "Content-Type: application/json" \
   -d '{
@@ -64,19 +116,18 @@ curl -s -X POST http://localhost:4434/admin/identities \
     "traits": {
       "email": "admin@mathtrail.test",
       "name": { "first": "Admin", "last": "User" },
-      "role": "admin",
-      "school_context": { "school_id": "school-1" }
-    },
-    "credentials": { "password": { "config": { "password": "test1234!" } } }
+      "role": "admin"
+    }
   }' | jq '{id: .id, role: .traits.role}'
 
-# Получить UUID нужного пользователя
-curl -s http://localhost:4434/admin/identities | jq '.[] | {id, email: .traits.email, role: .traits.role}'
+# Список всех identities
+curl -s http://localhost:4434/admin/identities \
+  | jq '.[] | {id, email: .traits.email, role: .traits.role}'
 ```
 
 ---
 
-## Шаг 4: Выдать доступ к мониторингу
+## Шаг 5: Выдать доступ к мониторингу
 
 ```bash
 # Выдать доступ конкретному пользователю
@@ -98,33 +149,11 @@ just revoke-monitoring <uuid>
 
 ---
 
-## Шаг 5: Вход и проверка UI
-
-1. Открыть https://mathtrail.localhost/auth/login
-2. Войти как `teacher@mathtrail.test` / `test1234!`
-3. Браузер получит cookie `ory_kratos_session`
-
-Доступ через Oathkeeper (с auth):
-
-| UI | URL |
-|----|-----|
-| Grafana | https://mathtrail.localhost/observability/grafana/ |
-| Pyroscope | https://mathtrail.localhost/observability/pyroscope/ |
-
----
-
 ## Проверка Oathkeeper
 
 ```bash
 # Все загруженные правила
 curl -s http://localhost:4456/rules | jq '.[].id'
-# Ожидаем:
-# "mathtrail-health-rule"
-# "mathtrail-auth-ui-rule"
-# "mathtrail-mentor-swagger-rule"
-# "mathtrail-api-rule"
-# "mathtrail-grafana-rule"
-# "mathtrail-pyroscope-rule"
 
 # 401 без сессии
 curl -o /dev/null -w "%{http_code}" \
@@ -159,22 +188,12 @@ Oathkeeper прокидывает `X-Webauth-Role` на основе `role` в K
 | teacher | Editor | Создание дашбордов |
 | student | Viewer | Только просмотр |
 
-```bash
-# Проверить роли пользователей через Grafana API
-curl -s http://admin:mathtrail@localhost:3000/api/org/users \
-  | jq '.[] | {login, role}'
-# Ожидаем: admin@mathtrail.test → Admin, teacher@mathtrail.test → Editor
-```
-
 ---
 
 ## Тестирование Identity UI
 
 ```bash
-# Проверить health endpoints
-just test
-
-# Или вручную (через Traefik, без port-forward)
+# Health endpoints через Traefik (без port-forward)
 curl -sk https://mathtrail.localhost/health/ready   # → {"status":"ready"}
 curl -sk https://mathtrail.localhost/health/liveness # → {"status":"ok"}
 ```
@@ -184,14 +203,11 @@ curl -sk https://mathtrail.localhost/health/liveness # → {"status":"ok"}
 ## NetworkPolicies
 
 ```bash
-# Убедиться что политики применены
 kubectl get networkpolicy -n identity
-# Ожидаем: allow-oathkeeper-monitoring-egress
 
 # Проверить связность Oathkeeper → Grafana
 kubectl exec -n identity deploy/oathkeeper -- \
   wget -qO- http://lgtm-grafana.monitoring.svc.cluster.local:80/api/health
-# Ожидаем: {"commit":"...","database":"ok","version":"..."}
 ```
 
 ---
@@ -201,5 +217,5 @@ kubectl exec -n identity deploy/oathkeeper -- \
 ```bash
 just status   # состояние всех podов
 just logs     # логи Identity UI
-kubectl get pods -n identity
+kubectl logs -n identity -l app.kubernetes.io/name=kratos -f
 ```

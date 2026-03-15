@@ -70,5 +70,12 @@ spec:
       services:
         - name: oathkeeper-proxy
           port: 4455
+
+    # SPA catch-all — must be last (least specific).
+    - match: Host(`{{ .Values.hostname }}`) && PathPrefix(`/`)
+      kind: Rule
+      services:
+        - name: identity-ui
+          port: 8080
   tls:
     secretName: mathtrail-tls-secret

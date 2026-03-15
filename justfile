@@ -24,6 +24,31 @@ dev: setup
 
 # Build and deploy to cluster (all Ory components + Identity UI)
 deploy: setup
+    #!/bin/bash
+    set -e
+    ENV_FILE="$(dirname '{{ justfile() }}')/.env"
+    if [[ ! -f "$ENV_FILE" ]]; then
+        echo ""
+        echo "ERROR: .env not found."
+        echo "Create it from the example and fill in your Google OAuth2 credentials:"
+        echo ""
+        echo "  cp .env.example .env"
+        echo "  # then edit .env — see instructions inside"
+        echo ""
+        echo "Reference: $(dirname '{{ justfile() }}')/.env.example"
+        exit 1
+    fi
+    source "$ENV_FILE"
+    if [[ -z "$GOOGLE_CLIENT_ID" || "$GOOGLE_CLIENT_ID" == your-client-id* ]]; then
+        echo "ERROR: GOOGLE_CLIENT_ID not set in .env"
+        exit 1
+    fi
+    kubectl create namespace "${IDENTITY_NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f -
+    kubectl create secret generic identity-google-oidc-bootstrap \
+        --namespace="${IDENTITY_NAMESPACE}" \
+        --from-literal=GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
+        --from-literal=GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET" \
+        --save-config --dry-run=client -o yaml | kubectl apply -f -
     skaffold run
 
 # Remove everything from cluster

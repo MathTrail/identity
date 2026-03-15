@@ -1,0 +1,11 @@
+# ConfigMap with Jsonnet mapper for Kratos Google OIDC claims.
+# Must exist before kratos automigrate Job (Helm pre-install hook inside kratos release).
+# identity-gateway deploys first (before kratos in skaffold.yaml), guaranteeing ordering.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kratos-oidc-mappers
+  namespace: {{ .Values.identityNamespace }}
+data:
+  oidc.google.jsonnet: |
+    {{- .Files.Get "files/oidc.google.jsonnet" | nindent 4 }}

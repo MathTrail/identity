@@ -7,19 +7,26 @@ kratos:
 
     serve:
       public:
-        base_url: https://mathtrail.localhost/api/kratos/
+        base_url: http://localhost/api/kratos/
         cors:
           enabled: true
           allowed_origins:
             - https://mathtrail.localhost
+            - http://localhost
           allow_credentials: true
       admin:
         base_url: http://kratos-admin:4434/
+
+    cookies:
+      domain: .localhost
+      same_site: Lax
+      secure: "false"
 
     selfservice:
       default_browser_return_url: https://mathtrail.localhost/auth/login
       allowed_return_urls:
         - https://mathtrail.localhost
+        - http://localhost
 
       methods:
         password:
@@ -37,9 +44,7 @@ kratos:
                   - openid
                   - email
                   - profile
-                # Google verifies emails; trust the status so Kratos marks
-                # the address as verified immediately and creates the session.
-                trust_email_verification_status: true
+                # Google verifies emails; mark address as verified via claims mapper.
 
       flows:
         login:
@@ -109,6 +114,12 @@ kratos:
           }
         }
       }
+
+  # dev mode disables CSRF checks — required because the OIDC callback comes
+  # from http://localhost (Google's loopback exception) while the SPA lives on
+  # https://mathtrail.localhost. Without --dev, Kratos rejects the flow fetch
+  # due to origin mismatch → infinite redirect.
+  development: true
 
   automigration:
     enabled: true

@@ -21,8 +21,6 @@ build:
 manifests:
   rawYaml:
     - manifests/network-policies.yaml
-    - manifests/kratos-oidc-configmap.yaml
-    - manifests/kratos-oidc-external-secret.yaml
 
 deploy:
   kubectl:

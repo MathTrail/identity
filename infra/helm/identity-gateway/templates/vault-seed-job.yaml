@@ -1,0 +1,108 @@
+# Vault seed Job: writes Google OAuth2 credentials to Vault KV before Ory services start.
+# Runs as a Helm pre-install,pre-upgrade hook (weight: -5 — before ExternalSecrets are created).
+# Reads credentials from bootstrap Secret (created by `just deploy` from .env).
+# Uses `vault kv patch` to update only the google_* keys without overwriting other keys at the path.
+#
+# Cross-namespace token access: secretKeyRef does not work across namespaces.
+# init-container (bitnami/kubectl) reads vault-init-credentials from namespace `vault`
+# via ClusterRole and writes the token to an emptyDir shared with the main container.
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vault-seed-identity
+  namespace: {{ .Values.identityNamespace }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-10"
+    "helm.sh/hook-delete-policy": before-hook-creation
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: vault-seed-identity
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-10"
+    "helm.sh/hook-delete-policy": before-hook-creation
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["vault-init-credentials"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vault-seed-identity
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-10"
+    "helm.sh/hook-delete-policy": before-hook-creation
+subjects:
+  - kind: ServiceAccount
+    name: vault-seed-identity
+    namespace: {{ .Values.identityNamespace }}
+roleRef:
+  kind: ClusterRole
+  name: vault-seed-identity
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vault-seed-identity
+  namespace: {{ .Values.identityNamespace }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      serviceAccountName: vault-seed-identity
+      restartPolicy: OnFailure
+      initContainers:
+        - name: fetch-vault-token
+          image: bitnami/kubectl:latest
+          command:
+            - sh
+            - -c
+            - |
+              kubectl get secret vault-init-credentials -n vault \
+                -o jsonpath='{.data.root-token}' | base64 -d > /vault-token/token
+              echo "Vault token fetched."
+          volumeMounts:
+            - name: vault-token
+              mountPath: /vault-token
+      containers:
+        - name: vault-seed
+          image: hashicorp/vault:1.19.0
+          command:
+            - sh
+            - -c
+            - |
+              export VAULT_TOKEN=$(cat /vault-token/token)
+              export VAULT_ADDR=http://vault.vault.svc.cluster.local:8200
+              vault kv put secret/local/mathtrail-identity/kratos \
+                google_client_id="$GOOGLE_CLIENT_ID" \
+                google_client_secret="$GOOGLE_CLIENT_SECRET"
+              echo "Vault seeded."
+          env:
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: identity-google-oidc-bootstrap
+                  key: GOOGLE_CLIENT_ID
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: identity-google-oidc-bootstrap
+                  key: GOOGLE_CLIENT_SECRET
+          volumeMounts:
+            - name: vault-token
+              mountPath: /vault-token
+      volumes:
+        - name: vault-token
+          emptyDir: {}
