@@ -12,6 +12,7 @@ spec:
   renewBefore: 720h   # 30 days
   dnsNames:
     - {{ .Values.hostname }}
+    - localhost
   issuerRef:
     name: {{ .Values.issuerName }}
     kind: ClusterIssuer

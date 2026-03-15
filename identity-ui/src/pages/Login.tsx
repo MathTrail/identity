@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { LoginFlow } from '@ory/client'
-import { kratos } from '@/lib/kratos'
+import { kratos, flowActionUrl } from '@/lib/kratos'
 import { useAuthStore } from '@/store/auth'
 import { Node } from '@/components/ory/Node'
 import {
@@ -83,7 +83,7 @@ export function Login() {
             </p>
           ))}
           <form
-            action={flow.ui.action}
+            action={flowActionUrl(flow.ui.action)}
             method={flow.ui.method}
             className="space-y-4"
           >

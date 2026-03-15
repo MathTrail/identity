@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { VerificationFlow } from '@ory/client'
-import { kratos } from '@/lib/kratos'
+import { kratos, flowActionUrl } from '@/lib/kratos'
 import { Node } from '@/components/ory/Node'
 import {
   Card,
@@ -49,7 +49,7 @@ export function Verification() {
             </p>
           ))}
           <form
-            action={flow.ui.action}
+            action={flowActionUrl(flow.ui.action)}
             method={flow.ui.method}
             className="space-y-4"
           >

@@ -38,16 +38,19 @@ kratos:
           enabled: true
           config:
             providers:
+              # Credentials are injected by kratos-oidc-config secret (ESO template)
+              # mounted as a second --config file via deployment.extraArgs.
+              # Kratos v25.4.0 does not support ${VAR} substitution for OIDC fields.
+              # This entry satisfies schema validation; the second config replaces it.
               - id: google
                 provider: google
-                client_id: "$GOOGLE_CLIENT_ID"
-                client_secret: "$GOOGLE_CLIENT_SECRET"
+                client_id: "pending"
+                client_secret: "pending"
                 mapper_url: file:///etc/config/kratos/oidc.google.jsonnet
                 scope:
                   - openid
                   - email
                   - profile
-                # Google verifies emails; mark address as verified via claims mapper.
 
       flows:
         login:
@@ -62,6 +65,8 @@ kratos:
             oidc:
               hooks:
                 - hook: session
+        error:
+          ui_url: https://mathtrail.localhost/auth/error
         recovery:
           enabled: true
           ui_url: https://mathtrail.localhost/auth/recovery
@@ -137,24 +142,23 @@ kratos:
       memory: 512Mi
 
 deployment:
-  # Mount the OIDC mapper ConfigMap so Kratos can read the jsonnet file.
+  # Pass kratos-oidc-config as a second --config file.
+  # ESO generates this secret with real Google credentials via template interpolation.
+  # The second config overrides selfservice.methods.oidc.config.providers from the main config.
+  extraArgs:
+    - --config
+    - /etc/kratos-oidc/oidc.yaml
   extraVolumes:
     - name: kratos-oidc-mappers
       configMap:
         name: kratos-oidc-mappers
+    - name: kratos-oidc-config
+      secret:
+        secretName: kratos-oidc-config
   extraVolumeMounts:
     - name: kratos-oidc-mappers
       mountPath: /etc/config/kratos
       readOnly: true
-  # Inject Google OAuth2 credentials from the K8s Secret created by ExternalSecret.
-  extraEnv:
-    - name: GOOGLE_CLIENT_ID
-      valueFrom:
-        secretKeyRef:
-          name: kratos-google-oidc
-          key: client_id
-    - name: GOOGLE_CLIENT_SECRET
-      valueFrom:
-        secretKeyRef:
-          name: kratos-google-oidc
-          key: client_secret
+    - name: kratos-oidc-config
+      mountPath: /etc/kratos-oidc
+      readOnly: true
