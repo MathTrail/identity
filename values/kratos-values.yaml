@@ -18,9 +18,12 @@ kratos:
         base_url: http://kratos-admin:4434/
 
     cookies:
-      domain: .localhost
+      # Explicitly set cookie domain to mathtrail.localhost (not localhost).
+      # base_url uses localhost so Google accepts the redirect_uri via loopback
+      # exception, but without this override Kratos would set Domain=localhost
+      # which Chrome rejects (localhost is a PSL TLD).
+      domain: mathtrail.localhost
       same_site: Lax
-      secure: "false"
 
     selfservice:
       default_browser_return_url: https://mathtrail.localhost/auth/login
