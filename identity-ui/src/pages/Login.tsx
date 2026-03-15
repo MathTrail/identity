@@ -40,7 +40,7 @@ export function Login() {
     const handleLogout = async () => {
       try {
         const { data } = await kratos.createBrowserLogoutFlow()
-        window.location.href = data.logout_url
+        window.location.href = flowActionUrl(data.logout_url)
       } catch {
         window.location.href = '/auth/login'
       }
