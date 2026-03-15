@@ -106,7 +106,10 @@ spec:
   entryPoints:
     - web
   routes:
-    - match: Host(`localhost`) && PathPrefix(`/api/kratos/self-service/methods/oidc/callback/`)
+    # All /api/kratos/ traffic on http://localhost — needed because with base_url=http://localhost/api/kratos/
+    # Kratos generates form action URLs like http://localhost/api/kratos/self-service/login?flow=xxx.
+    # Goes to identity-ui nginx which proxies to kratos-public (same as the HTTPS path).
+    - match: Host(`localhost`) && PathPrefix(`/api/kratos/`)
       kind: Rule
       services:
         - name: identity-ui
