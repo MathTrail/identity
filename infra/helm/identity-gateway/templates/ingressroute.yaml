@@ -80,10 +80,21 @@ spec:
   tls:
     secretName: mathtrail-tls-secret
 ---
-# HTTPS route for Google OIDC callback.
-# Traefik redirects all HTTP→HTTPS globally, so the callback from Google
-# (http://localhost/api/kratos/...) arrives as https://localhost/api/kratos/...
-# Uses the same TLS secret (localhost is included in the cert SAN).
+# Relay: Google OIDC callback arrives on https://localhost/... (Traefik upgrades all HTTP→HTTPS).
+# Cookies are set for mathtrail.localhost, not localhost — Kratos rejects the callback without them.
+# This middleware redirects the callback to mathtrail.localhost preserving path+query so the
+# browser re-sends the request with its mathtrail.localhost cookies.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: oidc-callback-relay
+  namespace: {{ .Values.identityNamespace }}
+spec:
+  redirectRegex:
+    regex: "^https://localhost(/api/kratos/self-service/methods/oidc/callback/.*)"
+    replacement: "https://{{ .Values.hostname }}${1}"
+    permanent: false
+---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
@@ -95,6 +106,8 @@ spec:
   routes:
     - match: Host(`localhost`) && PathPrefix(`/api/kratos/self-service/methods/oidc/callback/`)
       kind: Rule
+      middlewares:
+        - name: oidc-callback-relay
       services:
         - name: identity-ui
           port: 8080
