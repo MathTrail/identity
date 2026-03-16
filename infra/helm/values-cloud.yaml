@@ -1,5 +1,8 @@
 # Cloud overlay: managed Kubernetes
 
+image:
+  pullPolicy: Always
+
 resources:
   requests:
     cpu: "100m"

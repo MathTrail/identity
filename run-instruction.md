@@ -11,7 +11,7 @@ k3d кластер создаётся с `--port 80:80@loadbalancer --port 443:4
 | Путь | Сервис |
 |------|--------|
 | https://mathtrail.localhost/auth/ | Identity UI |
-| https://mathtrail.localhost/health/ | Identity UI (health) |
+| \health/ | Identity UI (health) |
 | https://mathtrail.localhost/api/ | Mentor API |
 | https://mathtrail.localhost/swagger/mentor/ | Mentor API Swagger |
 | https://mathtrail.localhost/observability/grafana/ | Grafana |
@@ -102,7 +102,33 @@ kubectl get pods -n identity
 
 ---
 
-## Шаг 4: Создать тестовую identity (для monitoring-тестов)
+## Шаг 4: Удалить пользователя (для повторного тестирования логина)
+
+Без port-forward (из любого окружения):
+
+```bash
+# Найти ID пользователя по email
+kubectl exec -n identity deploy/kratos -- \
+  wget -qO- http://kratos-admin/admin/identities \
+  | jq '.[] | {id, email: .traits.email}'
+
+# Удалить по ID
+kubectl run --rm -i --restart=Never -n identity delete-user --image=curlimages/curl -- \
+  curl -s -X DELETE http://kratos-admin/admin/identities/<id>
+```
+
+Через port-forward (если `just dev` активен или пробросить вручную `kubectl port-forward -n identity svc/kratos-admin 4434:80`):
+
+```bash
+curl -s http://localhost:4434/admin/identities | jq '.[] | {id, email: .traits.email}'
+curl -s -X DELETE http://localhost:4434/admin/identities/<id>
+```
+
+После удаления Google снова покажет экран выбора аккаунта и согласия при следующем входе.
+
+---
+
+## Шаг 5: Создать тестовую identity (для monitoring-тестов)
 
 `create-test-user` создаёт запись identity без credentials — пользователь должен залогиниться через Google с тем же email чтобы привязать аккаунт.
 
@@ -129,7 +155,7 @@ curl -s http://localhost:4434/admin/identities \
 
 ---
 
-## Шаг 5: Выдать доступ к мониторингу
+## Шаг 6: Выдать доступ к мониторингу
 
 ```bash
 # Выдать доступ конкретному пользователю

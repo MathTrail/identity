@@ -1,2 +1,5 @@
 # Dev overlay: K3s local development
 # Identity UI has no env vars — static SPA served by nginx
+
+image:
+  pullPolicy: Always
