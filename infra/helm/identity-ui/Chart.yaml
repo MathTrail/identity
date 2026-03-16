@@ -4,5 +4,5 @@ version: 0.1.0
 description: MathTrail Identity UI Service chart
 dependencies:
   - name: mathtrail-service-lib
-    version: "0.2.7"
+    version: "~0"
     repository: "https://MathTrail.github.io/charts/charts"
