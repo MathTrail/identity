@@ -60,19 +60,6 @@ delete:
 logs:
     kubectl logs -l app.kubernetes.io/name={{ SERVICE }} -n {{ NAMESPACE }} -f
 
-# Check deployment status for all identity components
-status:
-    #!/bin/bash
-    set -e
-    echo "=== Ory Components ==="
-    kubectl get pods -n {{ NAMESPACE }} | grep -E "kratos|hydra|keto|oathkeeper" || echo "No Ory pods found"
-    echo ""
-    echo "=== Identity UI ==="
-    kubectl get pods -n {{ NAMESPACE }} -l app.kubernetes.io/name={{ SERVICE }}
-    echo ""
-    echo "=== Services ==="
-    kubectl get svc -n {{ NAMESPACE }} | grep -E "kratos|hydra|keto|oathkeeper|identity" || echo "No identity services found"
-
 # -- Testing -------------------------------------------------------------------
 
 # Create a test parent user via Kratos Admin API (idempotent — skips if already exists)
