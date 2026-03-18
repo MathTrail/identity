@@ -132,6 +132,32 @@ oathkeeper:
       mutators:
         - handler: header
 
+    - id: "mathtrail-redpanda-rule"
+      upstream:
+        url: "http://mathtrail-redpanda-console-console.streaming.svc.cluster.local:8080"
+        strip_path: "/observability/redpanda"
+      match:
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
+        url: "<http|https>://<.*>/observability/redpanda/<.*>"
+      authenticators:
+        - handler: cookie_session
+      authorizer:
+        handler: remote_json
+        config:
+          remote: http://keto-read:4466/relation-tuples/check
+          payload: |
+            {
+              "namespace": "Monitoring",
+              "object": "ui",
+              "relation": "viewer",
+              "subject_id": "{{ print .Subject }}"
+            }
+      mutators:
+        - handler: header
+          config:
+            headers:
+              X-User-ID: "{{ print .Subject }}"
+
     - id: "mathtrail-grafana-rule"
       upstream:
         url: "http://lgtm-grafana.monitoring.svc.cluster.local:80"
