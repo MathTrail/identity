@@ -83,7 +83,7 @@ oathkeeper:
         url: "http://identity-ui:8080"
       match:
         methods: ["GET"]
-        url: "<http|https>://<.*>/assets/<.*>"
+        url: "<http|https>://<[^/]+>/assets/<.*>"
       authenticators:
         - handler: anonymous
       authorizer:
