@@ -132,13 +132,13 @@ oathkeeper:
       mutators:
         - handler: header
 
-    - id: "mathtrail-redpanda-rule"
+    - id: "mathtrail-kafka-ui-rule"
       upstream:
-        url: "http://mathtrail-redpanda-console-console.streaming.svc.cluster.local:8080"
-        strip_path: "/observability/redpanda"
+        url: "http://mathtrail-kafka-ui.streaming.svc.cluster.local:8080"
+        strip_path: "/observability/kafka-ui"
       match:
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
-        url: "<http|https>://<.*>/observability/redpanda/<.*>"
+        url: "<http|https>://<.*>/observability/kafka-ui/<.*>"
       authenticators:
         - handler: anonymous
       authorizer:
