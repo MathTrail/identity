@@ -13,10 +13,12 @@ CHART_NAME := "identity-ui"
 
 # -- Development ---------------------------------------------------------------
 
-# One-time setup: add Helm repos
+# One-time setup: add Helm repos and refresh local chart dependencies
 setup:
     helm repo add mathtrail-charts ${CHARTS_REPO} 2>/dev/null || true
     helm repo update
+    helm dep update infra/helm/identity-db-init
+    helm dep update infra/helm/identity-ui
 
 # Start development mode with hot-reload and port-forwarding
 dev: setup
