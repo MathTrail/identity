@@ -70,7 +70,7 @@ oathkeeper:
         url: "http://identity-ui:8080"
       match:
         methods: ["GET"]
-        url: "<http|https>://<.*>/health/<.*>"
+        url: "<http|https>://<[^/]+>/health/<.*>"
       authenticators:
         - handler: noop
       authorizer:
@@ -96,7 +96,7 @@ oathkeeper:
         url: "http://identity-ui:8080"
       match:
         methods: ["GET", "POST"]
-        url: "<http|https>://<.*>/auth/<.*>"
+        url: "<http|https>://<[^/]+>/auth/<.*>"
       authenticators:
         - handler: anonymous
       authorizer:
@@ -110,7 +110,7 @@ oathkeeper:
         strip_path: "/swagger/mentor"
       match:
         methods: ["GET"]
-        url: "<http|https>://<.*>/swagger/mentor/<.*>"
+        url: "<http|https>://<[^/]+>/swagger/mentor/<.*>"
       authenticators:
         - handler: cookie_session
       authorizer:
@@ -123,7 +123,7 @@ oathkeeper:
         url: "http://mentor-api.mathtrail.svc.cluster.local:8080"
       match:
         methods: ["GET", "POST", "PUT", "DELETE"]
-        url: "<http|https>://<.*>/api/<.*>"
+        url: "<http|https>://<[^/]+>/api/<.*>"
       authenticators:
         - handler: cookie_session
         - handler: bearer_token
@@ -137,7 +137,7 @@ oathkeeper:
         url: "http://mathtrail-kafka-ui.streaming.svc.cluster.local:8080"
       match:
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
-        url: "<http|https>://<.*>/observability/kafka-ui/<.*>"
+        url: "<http|https>://<[^/]+>/observability/kafka-ui/<.*>"
       authenticators:
         - handler: anonymous
       authorizer:
@@ -151,7 +151,7 @@ oathkeeper:
         strip_path: "/observability/grafana"
       match:
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
-        url: "<http|https>://<.*>/observability/grafana/<.*>"
+        url: "<http|https>://<[^/]+>/observability/grafana/<.*>"
       authenticators:
         - handler: cookie_session
       authorizer:
@@ -179,7 +179,7 @@ oathkeeper:
         strip_path: "/observability/pyroscope"
       match:
         methods: ["GET", "POST"]
-        url: "<http|https>://<.*>/observability/pyroscope/<.*>"
+        url: "<http|https>://<[^/]+>/observability/pyroscope/<.*>"
       authenticators:
         - handler: cookie_session
       authorizer:
