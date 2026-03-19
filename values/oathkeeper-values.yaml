@@ -142,16 +142,7 @@ oathkeeper:
       authenticators:
         - handler: cookie_session
       authorizer:
-        handler: remote_json
-        config:
-          remote: http://keto-read:4466/relation-tuples/check
-          payload: |
-            {
-              "namespace": "Monitoring",
-              "object": "ui",
-              "relation": "viewer",
-              "subject_id": "{{ print .Subject }}"
-            }
+        handler: allow
       mutators:
         - handler: header
           config:
