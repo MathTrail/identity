@@ -13,7 +13,7 @@ db:
 # Source of truth for schema definitions: D:\Projects\MathTrail\contracts\proto\
 schemaRegistration:
   enabled: true
-  apicurioUrl: "http://mathtrail-apicurio-apicurio-registry.streaming.svc.cluster.local:8080"
+  apicurioUrl: "http://apicurio.streaming.svc.cluster.local:8080"
   hookWeight: "8"
   schemas:
     - subject: "identity.v1.UserCreated"

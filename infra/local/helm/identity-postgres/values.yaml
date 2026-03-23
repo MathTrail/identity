@@ -1,6 +1,6 @@
 # PostgreSQL local development values for Ory identity stack (Kratos, Hydra, Keto).
 # Bitnami PostgreSQL 18.5.5
-# wal_level=logical is required for Debezium CDC (pre-configured for future use).
+# wal_level=logical is required for RisingWave CDC (logical replication via PostgreSQL WAL).
 #
 # Three databases are created: kratos, hydra, keto.
 # The identity-db-init Helm hook (in the identity chart) handles per-db initialisation
