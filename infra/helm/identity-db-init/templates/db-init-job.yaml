@@ -1,1 +1,3 @@
 {{ include "mathtrail-service-lib.dbInitJob" . }}
+---
+{{ include "mathtrail-service-lib.schemaRegistrationJob" . }}
