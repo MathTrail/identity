@@ -1,0 +1,26 @@
+# Identity UI — frontend development recipes
+# Run from identity-api/identity-ui/
+
+# install dependencies
+install:
+    npm ci
+
+# start vite dev server (port 3000, with Kratos proxy)
+dev:
+    npm run dev
+
+# production build (output: dist/)
+build:
+    npm run build
+
+# lint source files
+lint:
+    npm run lint
+
+# preview production build locally (port 4173)
+preview: build
+    npm run preview
+
+# add a shadcn/ui component: just add-component button
+add-component COMPONENT:
+    npx shadcn@latest add {{ COMPONENT }}

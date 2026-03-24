@@ -1,0 +1,26 @@
+name: Release Identity UI Helm Chart
+on:
+  push:
+    branches: [main]
+    paths: ['infra/helm/**']
+
+jobs:
+  release:
+    runs-on: mathtrail-runners
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Package chart
+        run: |
+          helm package infra/helm/identity-ui \
+            --destination /tmp/charts
+
+      - name: Push to OCI registry
+        run: |
+          helm push /tmp/charts/identity-ui-*.tgz \
+            oci://k3d-mathtrail-registry.localhost:5050/charts
+        env:
+          HELM_REGISTRY_INSECURE_SKIP_TLS_VERIFY: "true"

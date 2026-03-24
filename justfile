@@ -199,26 +199,18 @@ test:
 
 # -- Chart Release -------------------------------------------------------------
 
-# Package and publish chart to mathtrail-charts
+# Package and push chart to OCI registry
 release-chart:
     #!/bin/bash
-    set -e
+    set -euo pipefail
     CHART_DIR="infra/helm/{{ CHART_NAME }}"
     VERSION=$(grep '^version:' "$CHART_DIR/Chart.yaml" | awk '{print $2}')
     echo "Packaging {{ CHART_NAME }} v${VERSION}..."
     helm package "$CHART_DIR" --destination /tmp/mathtrail-charts
-
-    CHARTS_REPO_DIR="/tmp/mathtrail-charts-repo"
-    rm -rf "$CHARTS_REPO_DIR"
-    git clone git@github.com:MathTrail/charts.git "$CHARTS_REPO_DIR"
-    cp /tmp/mathtrail-charts/{{ CHART_NAME }}-*.tgz "$CHARTS_REPO_DIR/charts/"
-    cd "$CHARTS_REPO_DIR"
-    helm repo index ./charts \
-        --url ${CHARTS_REPO}
-    git add charts/
-    git commit -m "chore: release {{ CHART_NAME }} v${VERSION}"
-    git push
-    echo "Published {{ CHART_NAME }} v${VERSION} to mathtrail-charts"
+    HELM_REGISTRY_INSECURE_SKIP_TLS_VERIFY=true \
+        helm push "/tmp/mathtrail-charts/{{ CHART_NAME }}-${VERSION}.tgz" \
+        oci://${REGISTRY}/charts
+    echo "Pushed {{ CHART_NAME }}:${VERSION} to oci://${REGISTRY}/charts"
 
 # -- Terraform -----------------------------------------------------------------
 
