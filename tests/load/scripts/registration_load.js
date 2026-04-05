@@ -21,7 +21,9 @@ export default function () {
   const initRes = http.get(`${KRATOS_URL}/self-service/registration/browser`, {
     headers: { Accept: 'application/json' },
   });
-  check(initRes, { 'flow initiated': (r) => r.status === 200 });
+  if (!check(initRes, { 'flow initiated': (r) => r.status === 200 })) {
+    return;
+  }
 
   const flow = initRes.json();
   const csrfNode = flow.ui?.nodes?.find((n) => n.attributes?.name === 'csrf_token');
@@ -36,9 +38,11 @@ export default function () {
       redirects: 0,
     }
   );
-  check(oidcRes, { 'oidc redirect received': (r) => r.status === 422 || r.status === 302 });
+  if (!check(oidcRes, { 'oidc redirect received': (r) => r.status === 422 || r.status === 302 })) {
+    return;
+  }
 
-  // 3. Inject unique login_hint — mock-oauth2-server uses it as OIDC sub,
+  // 3. Inject unique login_hint — mock-oauth2-server uses it as OIDC sub and email,
   //    so each VU registers as a distinct Kratos identity.
   let authorizeUrl = oidcRes.json()?.redirect_browser_to || oidcRes.headers['Location'];
   authorizeUrl += `&login_hint=vuser-${uuidv4()}@mathtrail.test`;

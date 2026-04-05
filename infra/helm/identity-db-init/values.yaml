@@ -119,16 +119,16 @@ risingwaveCdc:
 
     -- 3. Materialized View — join CDC tables, produce StudentOnboardingReady event
     --
-    --    IMPORTANT: traits JSONB keys ('first_name', 'last_name') must match
-    --    the Kratos identity schema configured in identity-api.
+    --    IMPORTANT: traits structure matches Kratos identity schema (identity.schema.json).
+    --    Traits are stored as: {"email": "...", "name": {"first": "...", "last": "..."}, "role": "..."}
     --    Verify against: SELECT traits FROM identities LIMIT 1;
     CREATE MATERIALIZED VIEW IF NOT EXISTS students_onboarding_ready AS
     SELECT
         gen_random_uuid()::VARCHAR      AS event_id,
         i.id                            AS user_id,
         iva.value                       AS email,
-        i.traits->>'first_name'         AS first_name,
-        i.traits->>'last_name'          AS last_name,
+        i.traits->'name'->>'first'      AS first_name,
+        i.traits->'name'->>'last'       AS last_name,
         'student'                       AS role,
         NOW()::VARCHAR                  AS occurred_at,
         MAP {
