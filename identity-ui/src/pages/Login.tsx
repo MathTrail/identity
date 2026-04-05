@@ -87,7 +87,6 @@ export function Login() {
             method={flow.ui.method}
             className="space-y-4"
           >
-            <input type="hidden" name="upstream_parameters.prompt" value="consent" />
             {flow.ui.nodes.map((node, i) => (
               <Node key={i} node={node} />
             ))}
