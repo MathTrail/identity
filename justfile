@@ -184,6 +184,64 @@ add-test-relation:
       }' | jq .
     echo "Relation added"
 
+# -- Load Testing --------------------------------------------------------------
+
+# Bundle k6 load test scripts with esbuild
+bundle-k6:
+    mkdir -p tests/load/dist
+    esbuild tests/load/scripts/main.js \
+        --bundle \
+        --format=esm \
+        --external:k6 \
+        --external:'k6/*' \
+        --outfile=tests/load/dist/bundle.js
+
+# Run registration load tests (dev env must already be running with mock-oauth2-server)
+load-test: bundle-k6
+    #!/bin/bash
+    set -euo pipefail
+
+    # Ensure k6 operator CRDs are present
+    skaffold run -m identity-load-deps
+
+    # Clean previous run
+    skaffold delete -m identity-load-tests 2>/dev/null || true
+    kubectl delete testrun identity-registration-load-test -n {{ NAMESPACE }} --ignore-not-found 2>/dev/null || true
+
+    # Deploy TestRun + ConfigMap
+    skaffold run -m identity-load-tests
+
+    # Wait for TestRun to appear (k6-operator creates it asynchronously)
+    echo "Waiting for TestRun..."
+    for i in $(seq 1 30); do
+        kubectl get testrun identity-registration-load-test -n {{ NAMESPACE }} &>/dev/null && break
+        sleep 1
+    done
+
+    # Stream logs in background
+    echo "Test is running..."
+    kubectl logs -l k6_cr=identity-registration-load-test -n {{ NAMESPACE }} \
+        --all-containers --prefix -f 2>/dev/null &
+    LOGS_PID=$!
+
+    # Wait for finish
+    kubectl wait testrun identity-registration-load-test -n {{ NAMESPACE }} \
+        --for=jsonpath='{.status.stage}'=finished --timeout=600s 2>/dev/null || true
+    sleep 2
+    kill $LOGS_PID 2>/dev/null || true
+
+    echo ""
+    echo "Checking results..."
+    FAILED=$(kubectl get jobs -n {{ NAMESPACE }} -l k6_cr=identity-registration-load-test \
+        -o jsonpath='{.items[?(@.status.failed>0)].metadata.name}' 2>/dev/null)
+    if [ -n "$FAILED" ]; then
+        echo "Load test FAILED"
+        skaffold delete -m identity-load-tests
+        exit 1
+    fi
+    echo "Load test PASSED"
+    skaffold delete -m identity-load-tests
+
 # Test Identity UI endpoints
 test:
     #!/bin/bash

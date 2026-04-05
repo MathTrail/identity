@@ -149,8 +149,14 @@ metadata:
 build:
   artifacts: []
 
+manifests:
+  rawYaml:
+    - infra/local/manifests/mock-oauth2-server.yaml
+
 deploy:
   statusCheck: true
+  kubectl:
+    defaultNamespace: "{{.IDENTITY_NAMESPACE}}"
   helm:
     releases:
       - name: identity-postgres
@@ -166,3 +172,51 @@ deploy:
         createNamespace: true
         wait: true
         skipBuildDependencies: true
+
+---
+# Installs k6-operator (idempotent). Run once before load tests.
+apiVersion: skaffold/v4beta13
+kind: Config
+metadata:
+  name: identity-load-deps
+
+build:
+  artifacts: []
+
+deploy:
+  statusCheck: true
+  statusCheckDeadlineSeconds: 120
+  helm:
+    releases:
+      - name: k6-operator
+        namespace: k6-operator-system
+        repo: "{{.CHARTS_REPO}}"
+        remoteChart: k6-operator
+        createNamespace: true
+        wait: true
+
+---
+# Deploys the k6 TestRun for registration load testing.
+apiVersion: skaffold/v4beta13
+kind: Config
+metadata:
+  name: identity-load-tests
+
+build:
+  artifacts: []
+
+deploy:
+  helm:
+    releases:
+      - name: identity-registration-load-test
+        namespace: "{{.IDENTITY_NAMESPACE}}"
+        repo: "{{.CHARTS_REPO}}"
+        remoteChart: k6-test-runner
+        createNamespace: true
+        setValues:
+          parallelism: 1
+        setValueTemplates:
+          extraEnv[0].name: KRATOS_URL
+          extraEnv[0].value: http://kratos-public
+        setFiles:
+          loadTestScript: tests/load/dist/bundle.js
