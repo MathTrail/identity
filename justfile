@@ -17,7 +17,6 @@ CHART_NAME := "identity-ui"
 setup:
     helm repo add mathtrail-charts ${CHARTS_REPO} 2>/dev/null || true
     helm repo update
-    helm dep update infra/helm/identity-db-init
     helm dep update infra/helm/identity-ui
 
 # Start development mode with hot-reload and port-forwarding
@@ -51,7 +50,7 @@ deploy: setup
         --from-literal=GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
         --from-literal=GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET" \
         --save-config --dry-run=client -o yaml | kubectl apply -f -
-    skaffold run
+    skaffold run -m mathtrail-identity
 
 # Remove everything from cluster
 delete:

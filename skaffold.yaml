@@ -40,6 +40,7 @@ deploy:
         namespace: "{{.IDENTITY_NAMESPACE}}"
         createNamespace: true
         wait: true
+        skipBuildDependencies: true
         setValues:
           db.postgresHost: identity-postgres-postgresql
 

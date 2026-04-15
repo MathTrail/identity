@@ -13,7 +13,7 @@ db:
 # Source of truth for schema definitions: D:\Projects\MathTrail\contracts\proto\
 schemaRegistration:
   enabled: true
-  apicurioUrl: "http://apicurio.streaming.svc.cluster.local:8080"
+  apicurioUrl: "http://streaming-apicurio-apicurio-registry.streaming.svc.cluster.local:8080"
   hookWeight: "8"
   schemas:
     - subject: "identity.v1.UserCreated"
@@ -78,7 +78,7 @@ risingwaveCdc:
   automq:
     bootstrapServer: "automq.streaming.svc.cluster.local:9092"
     credentialsSecret: "risingwave-automq-scram"
-  apicurioUrl: "http://apicurio.streaming.svc.cluster.local:8080/apis/ccompat/v7"
+  apicurioUrl: "http://streaming-apicurio-apicurio-registry.streaming.svc.cluster.local:8080/apis/ccompat/v7"
   sql: |
     -- 1. CDC Source — connects to Kratos PostgreSQL via native CDC
     -- Uses replication slot 'risingwave_cdc' and publication 'risingwave_pub'
