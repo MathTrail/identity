@@ -1,0 +1,67 @@
+{{/*
+Grants CONNECT and CREATE on the kratos database to the risingwave CDC user.
+Must run after db-init (hook-weight 0) which creates the kratos database.
+
+CREATE PUBLICATION requires the replication user to have:
+  - REPLICATION attribute (set in postgres initdb.sql)
+  - CONNECT + CREATE privileges on the database
+*/}}
+{{- $postgresHost := .Values.db.postgresHost | default "postgres-postgresql" }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "mathtrail-service-lib.fullname" . }}-risingwave-pg-grants
+  labels:
+    {{- include "mathtrail-service-lib.labels" . | nindent 4 }}
+    app.kubernetes.io/component: risingwave-pg-grants
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 5
+  template:
+    metadata:
+      labels:
+        {{- include "mathtrail-service-lib.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: risingwave-pg-grants
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: grants
+          image: {{ dig "db" "initImage" "postgres:16-alpine" (.Values | toJson | fromJson) }}
+          env:
+            - name: PGHOST
+              value: {{ $postgresHost | quote }}
+            - name: PGUSER
+              value: postgres
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $postgresHost | quote }}
+                  key: postgres-password
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -euo pipefail
+              until pg_isready -h "$PGHOST" -U "$PGUSER" -q; do
+                echo "Waiting for postgres..." && sleep 2
+              done
+
+              # Local dev: risingwave must be SUPERUSER to CREATE PUBLICATION on tables
+              # owned by other roles (e.g. Kratos tables owned by 'mathtrail').
+              # CONNECT + CREATE on kratos are also required.
+              # All GRANTs are idempotent.
+              psql -d postgres -c "
+                DO \$\$
+                BEGIN
+                  IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'risingwave') THEN
+                    ALTER ROLE risingwave SUPERUSER;
+                    GRANT CONNECT, CREATE ON DATABASE kratos TO risingwave;
+                    RAISE NOTICE 'RisingWave grants applied.';
+                  ELSE
+                    RAISE WARNING 'Role risingwave does not exist — skipping grants.';
+                  END IF;
+                END \$\$;
+              "
+              echo "RisingWave pg grants complete."

@@ -42,8 +42,9 @@ postgresql:
           -- Create risingwave CDC user (idempotent).
           -- Password must match risingwave-pg-creds Secret (identity-db-init chart).
           -- REPLICATION is required for logical replication slot creation.
-          -- DB-level grants (CONNECT, CREATE for PUBLICATION) are issued by the
-          -- identity-cdc-setup Helm job after the kratos database is created.
+          -- SUPERUSER + CONNECT + CREATE on kratos are granted by identity-db-init
+          -- risingwave-pg-grants Job (hook-weight 1). SUPERUSER is needed locally because
+          -- CREATE PUBLICATION FOR TABLE requires ownership; Kratos tables are owned by 'mathtrail'.
           DO $$
           BEGIN
             IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'risingwave') THEN

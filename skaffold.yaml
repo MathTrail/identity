@@ -43,8 +43,15 @@ deploy:
         skipBuildDependencies: true
         setValues:
           db.postgresHost: identity-postgres-postgresql
-          # CDC setup requires Kratos tables — runs in identity-cdc-setup after Kratos
-          risingwaveCdc.enabled: "false"
+
+      # --- Schema registration (runs after DB init, before Ory services) ---
+      - name: identity-schema-registration
+        repo: "{{.CHARTS_REPO}}"
+        remoteChart: schema-registration
+        namespace: "{{.IDENTITY_NAMESPACE}}"
+        wait: true
+        valuesFiles:
+          - infra/helm/identity-schema-registration/values.yaml
 
       # --- Ory Infrastructure (vendored in mathtrail-charts) ---
       - name: kratos
@@ -82,15 +89,12 @@ deploy:
 
       # --- CDC setup (must run after Kratos migrations create source tables) ---
       - name: identity-cdc-setup
-        chartPath: infra/helm/identity-db-init
+        repo: "{{.CHARTS_REPO}}"
+        remoteChart: risingwave-cdc-setup
         namespace: "{{.IDENTITY_NAMESPACE}}"
         wait: true
-        skipBuildDependencies: true
-        setValues:
-          db.postgresHost: identity-postgres-postgresql
-          # Disable db-init jobs — already ran in identity-db-init
-          schemaRegistration.enabled: "false"
-          risingwaveCdc.enabled: "true"
+        valuesFiles:
+          - infra/helm/identity-cdc-setup/values.yaml
 
       # --- Identity UI (custom service, library chart) ---
       - name: identity-ui
