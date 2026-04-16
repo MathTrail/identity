@@ -38,5 +38,17 @@ postgresql:
               CREATE ROLE pgbouncer_auth WITH LOGIN PASSWORD 'pgbouncer_auth_pass';
             END IF;
           END $$;
+
+          -- Create risingwave CDC user (idempotent).
+          -- Password must match risingwave-pg-creds Secret (identity-db-init chart).
+          -- REPLICATION is required for logical replication slot creation.
+          -- DB-level grants (CONNECT, CREATE for PUBLICATION) are issued by the
+          -- identity-cdc-setup Helm job after the kratos database is created.
+          DO $$
+          BEGIN
+            IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'risingwave') THEN
+              CREATE ROLE risingwave WITH REPLICATION LOGIN PASSWORD 'risingwave-pg-local';
+            END IF;
+          END $$;
           -- NOTE: per-database initialisation (kratos, hydra, keto) is handled
           -- by the identity-db-init Helm pre-install hook, which runs after this postgres starts.
