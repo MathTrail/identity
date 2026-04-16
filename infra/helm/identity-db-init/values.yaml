@@ -61,7 +61,7 @@ risingwaveCdc:
   enabled: true
   hookWeight: "10"
   pgSource:
-    host: "kratos-postgresql"
+    host: "identity-postgres-postgresql"
     port: "5432"
     database: "kratos"
     credentialsSecret: "risingwave-pg-creds"
