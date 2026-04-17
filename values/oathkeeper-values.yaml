@@ -157,6 +157,7 @@ oathkeeper:
     - id: "mathtrail-apicurio-rule"
       upstream:
         url: "http://streaming-apicurio-apicurio-registry.streaming.svc.cluster.local:8080"
+        strip_path: "/observability/apicurio"
       match:
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
         url: "<http|https>://<[^/]+>/observability/apicurio<.*>"
