@@ -116,6 +116,44 @@ All traffic enters through Traefik at `https://mathtrail.localhost` and is route
 | `/observability/eventcatalog*` | streaming-eventcatalog-eventcatalog-local.streaming | cookie_session + `Monitoring:ui#viewer` |
 | `/observability/minio*` | streaming-minio-console.streaming | cookie_session + `Monitoring:ui#viewer` |
 
+## Granting Access to Observability UIs
+
+All `/observability/*` UIs require the `Monitoring:ui#viewer` Keto relation.
+This relation lives in PostgreSQL and is **lost on cluster rebuild** — re-grant after each rebuild.
+
+**Step 1 — Log in**
+
+Open `https://mathtrail.localhost/auth/login` and sign in with Google.
+
+**Step 2 — Find your user ID**
+
+Open `https://mathtrail.localhost/api/kratos/sessions/whoami` in the browser.
+Copy the value of `identity.id` from the JSON response.
+
+**Step 3 — Grant access** (requires `just dev` or port-forward to be running)
+
+```bash
+just grant-monitoring <identity.id>
+```
+
+**Step 4 — Verify**
+
+```bash
+just check-monitoring <identity.id>
+# → {"allowed": true}
+```
+
+After that, the following URLs are accessible:
+
+| UI | URL |
+|----|-----|
+| Kafka UI | https://mathtrail.localhost/observability/kafka-ui/ |
+| Apicurio Registry | https://mathtrail.localhost/observability/apicurio/ |
+| EventCatalog | https://mathtrail.localhost/observability/eventcatalog/ |
+| MinIO Console | https://mathtrail.localhost/observability/minio/ |
+| Grafana | https://mathtrail.localhost/observability/grafana/ |
+| Pyroscope | https://mathtrail.localhost/observability/pyroscope/ |
+
 ## Data
 
 Each Ory service has its own PostgreSQL database (`kratos`, `hydra`, `keto`), accessed via PgBouncer in **session mode** (required for prepared statement support).

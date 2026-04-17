@@ -57,6 +57,16 @@ spec:
           port: 80    # Grafana HTTP
         - protocol: TCP
           port: 4040  # Pyroscope
+    # Forward to streaming UIs (Kafka UI, Apicurio, EventCatalog, MinIO Console)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: streaming
+      ports:
+        - protocol: TCP
+          port: 8080  # Kafka UI, Apicurio, EventCatalog
+        - protocol: TCP
+          port: 9001  # MinIO Console
     # DNS resolution
     - ports:
         - protocol: UDP
