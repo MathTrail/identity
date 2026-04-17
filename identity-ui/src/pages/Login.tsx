@@ -51,7 +51,8 @@ export function Login() {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">Already signed in</CardTitle>
             <CardDescription>
-              {session.identity?.traits?.email}
+              <div>{session.identity?.traits?.email}</div>
+              <div className="text-xs font-mono mt-1">{session.identity?.id}</div>
             </CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center">
