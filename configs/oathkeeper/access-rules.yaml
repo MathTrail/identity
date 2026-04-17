@@ -72,13 +72,27 @@
   authorizers:
     - handler: remote_json
       config:
-        remote: http://keto-read:4466/relation-tuples/check
+        remote: http://keto-read/relation-tuples/check
   mutators:
     - handler: header
       config:
         headers:
           X-User-ID: "{{ print .Subject }}"
           X-User-Role: "{{ print .Extra.role }}"
+
+# Kafka UI static assets - anonymous (manifest.json, fonts, favicon, JS/CSS bundles)
+- id: "mathtrail-kafka-ui-assets-rule"
+  upstream:
+    url: "http://streaming-kafka-ui.streaming.svc.cluster.local:8080"
+  match:
+    methods: ["GET"]
+    url: "<http|https>://<.*>/observability/kafka-ui/<assets|fonts|favicon|manifest.json><.*>"
+  authenticators:
+    - handler: anonymous
+  authorizer:
+    handler: allow
+  mutators:
+    - handler: noop
 
 # Kafka UI - cookie session + Keto monitoring:ui#viewer check
 - id: "mathtrail-kafka-ui-rule"
@@ -92,7 +106,7 @@
   authorizer:
     handler: remote_json
     config:
-      remote: http://keto-read:4466/relation-tuples/check
+      remote: http://keto-read/relation-tuples/check
       payload: |
         {
           "namespace": "Monitoring",
@@ -117,7 +131,7 @@
   authorizer:
     handler: remote_json
     config:
-      remote: http://keto-read:4466/relation-tuples/check
+      remote: http://keto-read/relation-tuples/check
       payload: |
         {
           "namespace": "Monitoring",
@@ -140,7 +154,7 @@
   authorizer:
     handler: remote_json
     config:
-      remote: http://keto-read:4466/relation-tuples/check
+      remote: http://keto-read/relation-tuples/check
       payload: |
         {
           "namespace": "Monitoring",
@@ -163,7 +177,7 @@
   authorizer:
     handler: remote_json
     config:
-      remote: http://keto-read:4466/relation-tuples/check
+      remote: http://keto-read/relation-tuples/check
       payload: |
         {
           "namespace": "Monitoring",
@@ -187,7 +201,7 @@
   authorizer:
     handler: remote_json
     config:
-      remote: http://keto-read:4466/relation-tuples/check
+      remote: http://keto-read/relation-tuples/check
       payload: |
         {
           "namespace": "Monitoring",
@@ -216,7 +230,7 @@
   authorizer:
     handler: remote_json
     config:
-      remote: http://keto-read:4466/relation-tuples/check
+      remote: http://keto-read/relation-tuples/check
       payload: |
         {
           "namespace": "Monitoring",

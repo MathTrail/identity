@@ -7,7 +7,7 @@ oathkeeper:
       cookie_session:
         enabled: true
         config:
-          check_session_url: http://kratos-public:4433/sessions/whoami
+          check_session_url: http://kratos-public/sessions/whoami
           preserve_path: true
           extra_from: "@this"
           subject_from: "identity.id"
@@ -17,7 +17,7 @@ oathkeeper:
       bearer_token:
         enabled: true
         config:
-          check_session_url: http://kratos-public:4433/sessions/whoami
+          check_session_url: http://kratos-public/sessions/whoami
           preserve_path: true
           extra_from: "@this"
           subject_from: "identity.id"
@@ -31,7 +31,7 @@ oathkeeper:
       remote_json:
         enabled: true
         config:
-          remote: http://keto-read:4466/relation-tuples/check
+          remote: http://keto-read/relation-tuples/check
           payload: |
             {
               "namespace": "ClassGroup",
@@ -132,6 +132,19 @@ oathkeeper:
       mutators:
         - handler: header
 
+    - id: "mathtrail-kafka-ui-assets-rule"
+      upstream:
+        url: "http://streaming-kafka-ui.streaming.svc.cluster.local:8080"
+      match:
+        methods: ["GET"]
+        url: "<http|https>://<[^/]+>/observability/kafka-ui/<assets|fonts|favicon|manifest.json><.*>"
+      authenticators:
+        - handler: anonymous
+      authorizer:
+        handler: allow
+      mutators:
+        - handler: noop
+
     - id: "mathtrail-kafka-ui-rule"
       upstream:
         url: "http://streaming-kafka-ui.streaming.svc.cluster.local:8080"
@@ -143,7 +156,7 @@ oathkeeper:
       authorizer:
         handler: remote_json
         config:
-          remote: http://keto-read:4466/relation-tuples/check
+          remote: http://keto-read/relation-tuples/check
           payload: |
             {
               "namespace": "Monitoring",
@@ -166,7 +179,7 @@ oathkeeper:
       authorizer:
         handler: remote_json
         config:
-          remote: http://keto-read:4466/relation-tuples/check
+          remote: http://keto-read/relation-tuples/check
           payload: |
             {
               "namespace": "Monitoring",
@@ -188,7 +201,7 @@ oathkeeper:
       authorizer:
         handler: remote_json
         config:
-          remote: http://keto-read:4466/relation-tuples/check
+          remote: http://keto-read/relation-tuples/check
           payload: |
             {
               "namespace": "Monitoring",
@@ -210,7 +223,7 @@ oathkeeper:
       authorizer:
         handler: remote_json
         config:
-          remote: http://keto-read:4466/relation-tuples/check
+          remote: http://keto-read/relation-tuples/check
           payload: |
             {
               "namespace": "Monitoring",
@@ -233,7 +246,7 @@ oathkeeper:
       authorizer:
         handler: remote_json
         config:
-          remote: http://keto-read:4466/relation-tuples/check
+          remote: http://keto-read/relation-tuples/check
           payload: |
             {
               "namespace": "Monitoring",
@@ -261,7 +274,7 @@ oathkeeper:
       authorizer:
         handler: remote_json
         config:
-          remote: http://keto-read:4466/relation-tuples/check
+          remote: http://keto-read/relation-tuples/check
           payload: |
             {
               "namespace": "Monitoring",
