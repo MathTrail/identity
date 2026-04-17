@@ -54,6 +54,51 @@ spec:
         - name: oathkeeper-proxy
           port: 4455
 
+    # MinIO redirect — /observability/minio → minio.mathtrail.localhost subdomain.
+    # MinIO Console's JS hardcodes /api/v1 which conflicts with mentor-api; subdomain isolates it.
+    - match: Host(`{{ .Values.hostname }}`) && PathPrefix(`/observability/minio`)
+      kind: Rule
+      priority: 200
+      middlewares:
+        - name: redirect-minio-subdomain
+      services:
+        - name: oathkeeper-proxy
+          port: 4455
+
+    # EventCatalog trailing-slash redirect — Next.js 301s to cluster-internal URL without it.
+    - match: Host(`{{ .Values.hostname }}`) && Path(`/observability/eventcatalog`)
+      kind: Rule
+      priority: 200
+      middlewares:
+        - name: redirect-eventcatalog-slash
+      services:
+        - name: oathkeeper-proxy
+          port: 4455
+
+    # Apicurio root redirect — higher priority than generic /observability/ rule.
+    # Apicurio 3.x (Quarkus) redirects / → /apis using its cluster-internal URL;
+    # we catch the bare root path here and redirect to /apis before it reaches the backend.
+    - match: Host(`{{ .Values.hostname }}`) && PathRegexp(`^/observability/apicurio/?$`)
+      kind: Rule
+      priority: 200
+      middlewares:
+        - name: redirect-apicurio-root
+      services:
+        - name: oathkeeper-proxy
+          port: 4455
+
+    # Apicurio raw paths — Apicurio HTML has <base href="/"> so its links resolve at root.
+    # /apis/... API doc/UI; /resources/... static CSS/JS; /api-specifications/... OpenAPI JSON specs.
+    # All proxied to Oathkeeper which forwards to Apicurio without stripping.
+    - match: Host(`{{ .Values.hostname }}`) && (PathPrefix(`/apis`) || PathPrefix(`/resources`) || PathPrefix(`/api-specifications`))
+      kind: Rule
+      middlewares:
+        - name: rate-limit-api
+        - name: security-headers
+      services:
+        - name: oathkeeper-proxy
+          port: 4455
+
     # Observability — Keto authorization check is performed inside Oathkeeper
     - match: Host(`{{ .Values.hostname }}`) && PathPrefix(`/observability/`)
       kind: Rule
@@ -77,6 +122,28 @@ spec:
       services:
         - name: identity-ui
           port: 8080
+  tls:
+    secretName: mathtrail-tls-secret
+---
+# MinIO Console subdomain: minio.mathtrail.localhost → Oathkeeper → MinIO Console.
+# Separate host avoids /api/v1 conflict with mentor-api on the main domain.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: mathtrail-minio
+  namespace: {{ .Values.identityNamespace }}
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`minio.{{ .Values.hostname }}`)
+      kind: Rule
+      middlewares:
+        - name: rate-limit-api
+        - name: security-headers
+      services:
+        - name: oathkeeper-proxy
+          port: 4455
   tls:
     secretName: mathtrail-tls-secret
 ---

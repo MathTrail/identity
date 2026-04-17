@@ -5,13 +5,14 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: mathtrail-tls
-  namespace: kube-system
+  namespace: identity
 spec:
   secretName: mathtrail-tls-secret
   duration: 8760h     # 1 year
   renewBefore: 720h   # 30 days
   dnsNames:
     - mathtrail.localhost
+    - minio.mathtrail.localhost
   issuerRef:
     name: mathtrail-internal-ca-issuer
     kind: ClusterIssuer

@@ -8,7 +8,7 @@
     url: "http://identity-ui:8080"
   match:
     methods: ["GET"]
-    url: "<http|https>://<.*>/health/<.*>"
+    url: "<http|https>://mathtrail.localhost/health/<.*>"
   authenticators:
     - handler: noop
   authorizer:
@@ -22,7 +22,7 @@
     url: "http://identity-ui:8080"
   match:
     methods: ["GET", "POST"]
-    url: "<http|https>://<.*>/auth/<.*>"
+    url: "<http|https>://mathtrail.localhost/auth/<.*>"
   authenticators:
     - handler: anonymous
   authorizer:
@@ -37,7 +37,7 @@
     strip_path: "/swagger/mentor"
   match:
     methods: ["GET"]
-    url: "<http|https>://<.*>/swagger/mentor/<.*>"
+    url: "<http|https>://mathtrail.localhost/swagger/mentor/<.*>"
   authenticators:
     - handler: cookie_session
   authorizer:
@@ -51,7 +51,7 @@
     url: "http://mentor-api.mathtrail.svc.cluster.local:8080"
   match:
     methods: ["GET", "POST", "PUT", "DELETE"]
-    url: "<http|https>://<.*>/api/<.*>"
+    url: "<http|https>://mathtrail.localhost/api/<.*>"
   authenticators:
     - handler: cookie_session
     - handler: bearer_token
@@ -66,7 +66,7 @@
     url: "http://mentor-api.mathtrail.svc.cluster.local:8080"
   match:
     methods: ["GET", "POST"]
-    url: "<http|https>://<.*>/mentor/<.*>"
+    url: "<http|https>://mathtrail.localhost/mentor/<.*>"
   authenticators:
     - handler: bearer_token
   authorizers:
@@ -86,7 +86,7 @@
     url: "http://streaming-kafka-ui.streaming.svc.cluster.local:8080"
   match:
     methods: ["GET"]
-    url: "<http|https>://<.*>/observability/kafka-ui/<assets|fonts|favicon|manifest.json><.*>"
+    url: "<http|https>://mathtrail.localhost/observability/kafka-ui/<assets|fonts|favicon|manifest.json><.*>"
   authenticators:
     - handler: anonymous
   authorizer:
@@ -104,7 +104,7 @@
     url: "http://streaming-kafka-ui.streaming.svc.cluster.local:8080"
   match:
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
-    url: "<http|https>://<.*>/observability/kafka-ui<|/|/ui/.*|/api/.*|/actuator/.*>"
+    url: "<http|https>://mathtrail.localhost/observability/kafka-ui<|/|/ui/.*|/api/.*|/actuator/.*>"
   authenticators:
     - handler: cookie_session
   authorizer:
@@ -123,13 +123,15 @@
 
 # Apicurio Schema Registry - cookie session + Keto monitoring:ui#viewer check
 # strip_path required: Apicurio 3.x ignores QUARKUS_HTTP_ROOT_PATH, always serves at /
+# Root path redirect (/ → /apis) handled by Traefik redirect-apicurio-root middleware
+# to avoid Apicurio generating absolute redirects with cluster-internal hostname.
 - id: "mathtrail-apicurio-rule"
   upstream:
     url: "http://streaming-apicurio-apicurio-registry.streaming.svc.cluster.local:8080"
     strip_path: "/observability/apicurio"
   match:
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
-    url: "<http|https>://<.*>/observability/apicurio<.*>"
+    url: "<http|https>://mathtrail.localhost/observability/apicurio<.*>"
   authenticators:
     - handler: cookie_session
   authorizer:
@@ -146,13 +148,64 @@
   mutators:
     - handler: noop
 
+# Apicurio raw-path rules: Apicurio HTML has <base href="/"> so relative links
+# resolve at root (/apis/..., /resources/...) rather than under /observability/apicurio/.
+- id: "mathtrail-apicurio-apis-rule"
+  upstream:
+    url: "http://streaming-apicurio-apicurio-registry.streaming.svc.cluster.local:8080"
+  match:
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
+    url: "<http|https>://mathtrail.localhost/apis<.*>"
+  authenticators:
+    - handler: cookie_session
+  authorizer:
+    handler: remote_json
+    config:
+      remote: http://keto-read/relation-tuples/check
+      payload: |
+        {
+          "namespace": "Monitoring",
+          "object": "ui",
+          "relation": "viewer",
+          "subject_id": "{{ print .Subject }}"
+        }
+  mutators:
+    - handler: noop
+
+- id: "mathtrail-apicurio-resources-rule"
+  upstream:
+    url: "http://streaming-apicurio-apicurio-registry.streaming.svc.cluster.local:8080"
+  match:
+    methods: ["GET"]
+    url: "<http|https>://mathtrail.localhost/resources<.*>"
+  authenticators:
+    - handler: anonymous
+  authorizer:
+    handler: allow
+  mutators:
+    - handler: noop
+
+- id: "mathtrail-apicurio-specs-rule"
+  upstream:
+    url: "http://streaming-apicurio-apicurio-registry.streaming.svc.cluster.local:8080"
+  match:
+    methods: ["GET"]
+    url: "<http|https>://mathtrail.localhost/api-specifications<.*>"
+  authenticators:
+    - handler: anonymous
+  authorizer:
+    handler: allow
+  mutators:
+    - handler: noop
+
 # EventCatalog - cookie session + Keto monitoring:ui#viewer check
 - id: "mathtrail-eventcatalog-rule"
   upstream:
     url: "http://streaming-eventcatalog-eventcatalog-local.streaming.svc.cluster.local:8080"
+    preserve_host: true
   match:
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
-    url: "<http|https>://<.*>/observability/eventcatalog<.*>"
+    url: "<http|https>://mathtrail.localhost/observability/eventcatalog<.*>"
   authenticators:
     - handler: cookie_session
   authorizer:
@@ -170,12 +223,14 @@
     - handler: noop
 
 # MinIO Console - cookie session + Keto monitoring:ui#viewer check
+# Served on minio.mathtrail.localhost subdomain to avoid /api/v1 conflict with mentor-api.
+# /observability/minio redirects to this subdomain via Traefik redirect-minio-subdomain middleware.
 - id: "mathtrail-minio-rule"
   upstream:
     url: "http://streaming-minio-console.streaming.svc.cluster.local:9001"
   match:
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
-    url: "<http|https>://<.*>/observability/minio<.*>"
+    url: "<http|https>://minio.mathtrail.localhost<.*>"
   authenticators:
     - handler: cookie_session
   authorizer:
@@ -199,7 +254,7 @@
     strip_path: "/observability/grafana"
   match:
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
-    url: "<http|https>://<.*>/observability/grafana/<.*>"
+    url: "<http|https>://mathtrail.localhost/observability/grafana/<.*>"
   authenticators:
     - handler: cookie_session
   authorizer:
@@ -228,7 +283,7 @@
     strip_path: "/observability/pyroscope"
   match:
     methods: ["GET", "POST"]
-    url: "<http|https>://<.*>/observability/pyroscope/<.*>"
+    url: "<http|https>://mathtrail.localhost/observability/pyroscope/<.*>"
   authenticators:
     - handler: cookie_session
   authorizer:

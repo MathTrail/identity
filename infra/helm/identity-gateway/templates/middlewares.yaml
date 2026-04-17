@@ -53,3 +53,44 @@ spec:
     frameDeny: true
     contentTypeNosniff: true
     browserXssFilter: true
+---
+# MinIO redirect: /observability/minio is replaced by the minio.mathtrail.localhost subdomain.
+# MinIO Console hardcodes /api/v1 and <base href="/"> which conflict with mentor-api at /api/v1.
+# A subdomain gives MinIO its own origin so root-relative paths stay on the MinIO host.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-minio-subdomain
+  namespace: {{ .Values.identityNamespace }}
+spec:
+  redirectRegex:
+    regex: "^https://{{ .Values.hostname }}/observability/minio(/.*)?"
+    replacement: "https://minio.{{ .Values.hostname }}${1}"
+    permanent: false
+---
+# EventCatalog trailing-slash redirect: Next.js returns 301 with the cluster-internal hostname
+# when the path lacks a trailing slash. Intercept at Traefik before it reaches the backend.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-eventcatalog-slash
+  namespace: {{ .Values.identityNamespace }}
+spec:
+  redirectRegex:
+    regex: "^https://{{ .Values.hostname }}/observability/eventcatalog$"
+    replacement: "https://{{ .Values.hostname }}/observability/eventcatalog/"
+    permanent: true
+---
+# Apicurio root redirect: / → /apis (the actual UI path in Apicurio 3.x).
+# Apicurio generates an absolute redirect using its cluster-internal hostname,
+# so we intercept at Traefik before the request reaches Oathkeeper/Apicurio.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-apicurio-root
+  namespace: {{ .Values.identityNamespace }}
+spec:
+  redirectRegex:
+    regex: "^https://{{ .Values.hostname }}/observability/apicurio/?$"
+    replacement: "https://{{ .Values.hostname }}/observability/apicurio/apis"
+    permanent: false

@@ -150,9 +150,15 @@ After that, the following URLs are accessible:
 | Kafka UI | https://mathtrail.localhost/observability/kafka-ui/ |
 | Apicurio Registry | https://mathtrail.localhost/observability/apicurio/ |
 | EventCatalog | https://mathtrail.localhost/observability/eventcatalog/ |
-| MinIO Console | https://mathtrail.localhost/observability/minio/ |
+| MinIO Console | https://minio.mathtrail.localhost/ (redirects from /observability/minio) |
 | Grafana | https://mathtrail.localhost/observability/grafana/ |
 | Pyroscope | https://mathtrail.localhost/observability/pyroscope/ |
+
+### Default credentials (local dev only)
+
+| Service | Username | Password | Secret |
+|---------|----------|----------|--------|
+| MinIO Console | `minioadmin` | `minioadmin` | `streaming/minio-root-creds` |
 
 ## Data
 
