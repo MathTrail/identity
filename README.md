@@ -32,6 +32,10 @@ graph LR
         MentorAPI["mentor-api"]
         Grafana["Grafana"]
         Pyroscope["Pyroscope"]
+        KafkaUI["Kafka UI"]
+        Apicurio["Apicurio"]
+        EventCatalog["EventCatalog"]
+        MinIO["MinIO Console"]
     end
 
     subgraph Secrets ["Secrets"]
@@ -47,6 +51,10 @@ graph LR
     OK -- "proxy" --> MentorAPI
     OK -- "proxy + X-Webauth-*" --> Grafana
     OK -- "proxy" --> Pyroscope
+    OK -- "proxy" --> KafkaUI
+    OK -- "proxy" --> Apicurio
+    OK -- "proxy" --> EventCatalog
+    OK -- "proxy" --> MinIO
     Hydra -- "consent UI" --> UI
     ESO -- "DSN secrets" --> Kratos & Hydra & Keto
 
@@ -65,7 +73,7 @@ graph LR
     class PGB,PG dataCls
     class Vault,ESO secretCls
     class Browser actorCls
-    class MentorAPI,Grafana,Pyroscope dstCls
+    class MentorAPI,Grafana,Pyroscope,KafkaUI,Apicurio,EventCatalog,MinIO dstCls
 ```
 
 ## Quick Start
@@ -86,6 +94,27 @@ just status   # Pod health overview
 | Ory Keto — Permissions (ReBAC) | [docs/keto.md](docs/keto.md) | 4466 (read), 4467 (write) |
 | Ory Oathkeeper — API Gateway | [docs/oathkeeper.md](docs/oathkeeper.md) | 4455 (proxy), 4456 (api) |
 | Identity UI — Self-service SPA | [docs/identity-ui.md](docs/identity-ui.md) | 8090 (via port-forward) |
+
+## Proxied Paths
+
+All traffic enters through Traefik at `https://mathtrail.localhost` and is routed to Oathkeeper for auth enforcement.
+
+| Path | Upstream | Auth |
+|------|----------|------|
+| `/health/*` | identity-ui | none |
+| `/auth/*` | identity-ui | anonymous |
+| `/assets/*` | identity-ui | anonymous |
+| `/api/kratos/*` | identity-ui → Kratos | n/a (direct, no Oathkeeper) |
+| `/api/hydra-admin/*` | identity-ui → Hydra | n/a (direct, no Oathkeeper) |
+| `/api/*` | mentor-api | cookie_session or bearer_token |
+| `/swagger/mentor/*` | mentor-api | cookie_session |
+| `/mentor/*` | mentor-api | bearer_token + Keto ReBAC |
+| `/observability/grafana/*` | lgtm-grafana.monitoring | cookie_session + `Monitoring:ui#viewer` |
+| `/observability/pyroscope/*` | pyroscope.monitoring | cookie_session + `Monitoring:ui#viewer` |
+| `/observability/kafka-ui*` | streaming-kafka-ui.streaming | cookie_session + `Monitoring:ui#viewer` |
+| `/observability/apicurio*` | streaming-apicurio-apicurio-registry.streaming | cookie_session + `Monitoring:ui#viewer` |
+| `/observability/eventcatalog*` | streaming-eventcatalog-eventcatalog-local.streaming | cookie_session + `Monitoring:ui#viewer` |
+| `/observability/minio*` | streaming-minio-console.streaming | cookie_session + `Monitoring:ui#viewer` |
 
 ## Data
 
