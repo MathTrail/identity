@@ -247,6 +247,31 @@
   mutators:
     - handler: noop
 
+# RisingWave Dashboard - cookie session + Keto monitoring:ui#viewer check
+# Served on risingwave.mathtrail.localhost subdomain. Next.js SPA uses root-relative paths;
+# subdomain gives it its own origin. /observability/risingwave redirects here via Traefik.
+- id: "mathtrail-risingwave-rule"
+  upstream:
+    url: "http://risingwave-frontend-meta-headless.streaming.svc.cluster.local:5691"
+  match:
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
+    url: "<http|https>://risingwave.mathtrail.localhost<.*>"
+  authenticators:
+    - handler: cookie_session
+  authorizer:
+    handler: remote_json
+    config:
+      remote: http://keto-read/relation-tuples/check
+      payload: |
+        {
+          "namespace": "Monitoring",
+          "object": "ui",
+          "relation": "viewer",
+          "subject_id": "{{ print .Subject }}"
+        }
+  mutators:
+    - handler: noop
+
 # Grafana (LGTM) - cookie session + Keto monitoring:ui#viewer check
 - id: "mathtrail-grafana-rule"
   upstream:

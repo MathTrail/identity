@@ -68,6 +68,34 @@ spec:
     replacement: "https://minio.{{ .Values.hostname }}${1}"
     permanent: false
 ---
+# RisingWave page-path rewrite: /page/ → /page/index.html before forwarding to backend.
+# Oathkeeper uses path.Join (calls path.Clean) which strips trailing slashes, so Go's FileServer
+# in RisingWave meta sees /page (no slash) and 301s to /page/ → infinite redirect loop.
+# replacePathRegex rewrites the forwarded path only; the browser URL stays unchanged.
+# Regex matches single-segment paths with trailing slash (no dots = not a static asset).
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: rewrite-risingwave-slash
+  namespace: {{ .Values.identityNamespace }}
+spec:
+  replacePathRegex:
+    regex: "^(/[^/.]+)/$"
+    replacement: "${1}/index.html"
+---
+# RisingWave Dashboard subdomain redirect: /observability/risingwave → risingwave.mathtrail.localhost.
+# Next.js SPA uses root-relative paths (/_next/static/..., /cluster/, etc.); subdomain gives it its own origin.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-risingwave-subdomain
+  namespace: {{ .Values.identityNamespace }}
+spec:
+  redirectRegex:
+    regex: "^https://{{ .Values.hostname }}/observability/risingwave(/.*)?"
+    replacement: "https://risingwave.{{ .Values.hostname }}${1}"
+    permanent: false
+---
 # EventCatalog trailing-slash redirect: Next.js returns 301 with the cluster-internal hostname
 # when the path lacks a trailing slash. Intercept at Traefik before it reaches the backend.
 apiVersion: traefik.io/v1alpha1

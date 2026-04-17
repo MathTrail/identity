@@ -115,6 +115,7 @@ All traffic enters through Traefik at `https://mathtrail.localhost` and is route
 | `/observability/apicurio*` | streaming-apicurio-apicurio-registry.streaming | cookie_session + `Monitoring:ui#viewer` |
 | `/observability/eventcatalog*` | streaming-eventcatalog-eventcatalog-local.streaming | cookie_session + `Monitoring:ui#viewer` |
 | `/observability/minio*` | streaming-minio-console.streaming | cookie_session + `Monitoring:ui#viewer` |
+| `/observability/risingwave*` | risingwave-frontend-meta-headless.streaming | cookie_session + `Monitoring:ui#viewer` |
 
 ## Granting Access to Observability UIs
 
@@ -151,6 +152,7 @@ After that, the following URLs are accessible:
 | Apicurio Registry | https://mathtrail.localhost/observability/apicurio/ |
 | EventCatalog | https://mathtrail.localhost/observability/eventcatalog/ |
 | MinIO Console | https://minio.mathtrail.localhost/ (redirects from /observability/minio) |
+| RisingWave Dashboard | https://risingwave.mathtrail.localhost/ (redirects from /observability/risingwave) |
 | Grafana | https://mathtrail.localhost/observability/grafana/ |
 | Pyroscope | https://mathtrail.localhost/observability/pyroscope/ |
 

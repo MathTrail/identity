@@ -54,6 +54,17 @@ spec:
         - name: oathkeeper-proxy
           port: 4455
 
+    # RisingWave Dashboard redirect — /observability/risingwave → risingwave.mathtrail.localhost subdomain.
+    # Next.js SPA uses root-relative paths; subdomain gives it its own origin.
+    - match: Host(`{{ .Values.hostname }}`) && PathPrefix(`/observability/risingwave`)
+      kind: Rule
+      priority: 200
+      middlewares:
+        - name: redirect-risingwave-subdomain
+      services:
+        - name: oathkeeper-proxy
+          port: 4455
+
     # MinIO redirect — /observability/minio → minio.mathtrail.localhost subdomain.
     # MinIO Console's JS hardcodes /api/v1 which conflicts with mentor-api; subdomain isolates it.
     - match: Host(`{{ .Values.hostname }}`) && PathPrefix(`/observability/minio`)
@@ -122,6 +133,29 @@ spec:
       services:
         - name: identity-ui
           port: 8080
+  tls:
+    secretName: mathtrail-tls-secret
+---
+# RisingWave Dashboard subdomain: risingwave.mathtrail.localhost → Oathkeeper → RisingWave meta:5691.
+# Next.js SPA uses root-relative paths; subdomain gives it its own origin.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: mathtrail-risingwave
+  namespace: {{ .Values.identityNamespace }}
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`risingwave.{{ .Values.hostname }}`)
+      kind: Rule
+      middlewares:
+        - name: rewrite-risingwave-slash
+        - name: rate-limit-api
+        - name: security-headers
+      services:
+        - name: oathkeeper-proxy
+          port: 4455
   tls:
     secretName: mathtrail-tls-secret
 ---
