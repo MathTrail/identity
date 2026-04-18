@@ -15,7 +15,7 @@
 # =======================================================================
 
 pgSource:
-  host: "identity-postgres-postgresql"
+  host: "identity-postgres-postgresql.identity.svc.cluster.local"
   port: "5432"
   database: "kratos"
   credentialsSecret: "risingwave-pg-creds"
