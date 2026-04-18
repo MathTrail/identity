@@ -36,6 +36,10 @@ graph LR
         Apicurio["Apicurio"]
         EventCatalog["EventCatalog"]
         MinIO["MinIO Console"]
+        KratosAdmin["Kratos Admin"]
+        HydraAdmin["Hydra Admin"]
+        KetoRead["Keto Read"]
+        OathkeeperAPI["Oathkeeper API"]
     end
 
     subgraph Secrets ["Secrets"]
@@ -55,6 +59,10 @@ graph LR
     OK -- "proxy" --> Apicurio
     OK -- "proxy" --> EventCatalog
     OK -- "proxy" --> MinIO
+    OK -- "proxy" --> KratosAdmin
+    OK -- "proxy" --> HydraAdmin
+    OK -- "proxy" --> KetoRead
+    OK -- "proxy" --> OathkeeperAPI
     Hydra -- "consent UI" --> UI
     ESO -- "DSN secrets" --> Kratos & Hydra & Keto
 
@@ -73,7 +81,7 @@ graph LR
     class PGB,PG dataCls
     class Vault,ESO secretCls
     class Browser actorCls
-    class MentorAPI,Grafana,Pyroscope,KafkaUI,Apicurio,EventCatalog,MinIO dstCls
+    class MentorAPI,Grafana,Pyroscope,KafkaUI,Apicurio,EventCatalog,MinIO,KratosAdmin,HydraAdmin,KetoRead,OathkeeperAPI dstCls
 ```
 
 ## Quick Start
@@ -116,6 +124,10 @@ All traffic enters through Traefik at `https://mathtrail.localhost` and is route
 | `/observability/eventcatalog*` | streaming-eventcatalog-eventcatalog-local.streaming | cookie_session + `Monitoring:ui#viewer` |
 | `/observability/minio*` | streaming-minio-console.streaming | cookie_session + `Monitoring:ui#viewer` |
 | `/observability/risingwave*` | risingwave-frontend-meta-headless.streaming | cookie_session + `Monitoring:ui#viewer` |
+| `/identity/kratos/*` | kratos-admin.identity | cookie_session + `Identity:admin#viewer` |
+| `/identity/hydra/*` | hydra-admin.identity | cookie_session + `Identity:admin#viewer` |
+| `/identity/keto/*` | keto-read.identity | cookie_session + `Identity:admin#viewer` |
+| `/identity/oathkeeper/*` | oathkeeper-api.identity | cookie_session + `Identity:admin#viewer` |
 
 ## Granting Access to Observability UIs
 
@@ -161,6 +173,49 @@ After that, the following URLs are accessible:
 | Service | Username | Password | Secret |
 |---------|----------|----------|--------|
 | MinIO Console | `minioadmin` | `minioadmin` | `streaming/minio-root-creds` |
+
+## Granting Access to Identity Admin UIs
+
+All `/identity/*` paths require the `Identity:admin#viewer` Keto relation.
+This relation lives in PostgreSQL and is **lost on cluster rebuild** — re-grant after each rebuild.
+Only users with the `admin` role should be granted this access.
+
+**Step 1 — Log in**
+
+Open `https://mathtrail.localhost/auth/login` and sign in with Google.
+
+**Step 2 — Find your user ID**
+
+Open `https://mathtrail.localhost/api/kratos/sessions/whoami` in the browser.
+Copy the value of `identity.id` from the JSON response.
+
+**Step 3 — Grant access** (requires `just dev` or port-forward to be running)
+
+```bash
+just grant-identity <identity.id>
+```
+
+**Step 4 — Verify**
+
+```bash
+just check-identity <identity.id>
+# → {"allowed": true}
+```
+
+After that, the following URLs are accessible:
+
+| UI | URL |
+|----|-----|
+| Kratos Admin | https://mathtrail.localhost/identity/kratos/ |
+| Hydra Admin | https://mathtrail.localhost/identity/hydra/ |
+| Keto Read | https://mathtrail.localhost/identity/keto/ |
+| Oathkeeper API | https://mathtrail.localhost/identity/oathkeeper/ |
+
+To bulk-grant access to all admin users:
+
+```bash
+just seed-identity
+```
 
 ## Data
 

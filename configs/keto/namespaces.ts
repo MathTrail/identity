@@ -29,3 +29,8 @@ class ClassGroup implements Namespace {
 // class_group:math_101#teachers@user:uuid-teacher    (Teacher assigned to class)
 // class_group:math_101#students@user:uuid-student    (Student assigned to class)
 // resource:lesson_plans#view@class_group:math_101#students  (All students can view lesson plans)
+
+class Identity implements Namespace {}
+
+// Example relation tuples:
+// Identity:admin#viewer@user:uuid-admin   (Admin user can access identity admin UIs)

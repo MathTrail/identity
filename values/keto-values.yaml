@@ -12,6 +12,8 @@ keto:
         name: ClassGroup
       - id: 2
         name: Monitoring
+      - id: 3
+        name: Identity
 
     serve:
       read:

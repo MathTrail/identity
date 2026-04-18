@@ -168,6 +168,73 @@ seed-monitoring:
     echo "Done. Granted monitoring access to $COUNT user(s)."
     echo "Run 'just list-monitoring' to verify."
 
+# -- Identity Admin Access (Keto) ----------------------------------------------
+
+# Grant a user access to identity admin UIs
+# Usage: just grant-identity <kratos-user-uuid>
+grant-identity USER_ID:
+    #!/bin/bash
+    set -e
+    echo "Granting identity admin access to {{ USER_ID }}..."
+    curl -sf -X PUT http://localhost:4467/admin/relation-tuples \
+      -H "Content-Type: application/json" \
+      -d '{
+        "namespace": "Identity",
+        "object": "admin",
+        "relation": "viewer",
+        "subject_id": "{{ USER_ID }}"
+      }' | jq .
+    echo "Done."
+
+# Revoke identity admin access from a user
+# Usage: just revoke-identity <kratos-user-uuid>
+revoke-identity USER_ID:
+    #!/bin/bash
+    set -e
+    echo "Revoking identity admin access from {{ USER_ID }}..."
+    curl -sf -X DELETE \
+      "http://localhost:4467/admin/relation-tuples?namespace=Identity&object=admin&relation=viewer&subject_id={{ USER_ID }}"
+    echo "Done."
+
+# Check if a user has identity admin access (returns {allowed: true/false})
+# Usage: just check-identity <kratos-user-uuid>
+check-identity USER_ID:
+    curl -sf -X POST http://localhost:4466/relation-tuples/check \
+      -H "Content-Type: application/json" \
+      -d '{"namespace":"Identity","object":"admin","relation":"viewer","subject_id":"{{ USER_ID }}"}' | jq .
+
+# List all users with identity admin access
+list-identity:
+    curl -sf "http://localhost:4466/admin/relation-tuples?namespace=Identity&object=admin&relation=viewer" | jq '.relation_tuples[].subject_id'
+
+# Auto-seed identity admin access for all admin-role users from Kratos
+seed-identity:
+    #!/bin/bash
+    set -e
+    echo "Seeding identity admin access for all admin users..."
+    echo ""
+    COUNT=0
+    while IFS= read -r identity; do
+        ROLE=$(echo "$identity" | jq -r '.traits.role // empty')
+        USER_ID=$(echo "$identity" | jq -r '.id')
+        EMAIL=$(echo "$identity" | jq -r '.traits.email // "unknown"')
+        if [[ "$ROLE" == "admin" ]]; then
+            echo "Granting identity admin access: $EMAIL ($USER_ID)"
+            curl -sf -X PUT http://localhost:4467/admin/relation-tuples \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"namespace\": \"Identity\",
+                \"object\": \"admin\",
+                \"relation\": \"viewer\",
+                \"subject_id\": \"$USER_ID\"
+              }" > /dev/null
+            COUNT=$((COUNT + 1))
+        fi
+    done < <(curl -sf "http://localhost:4434/admin/identities?per_page=250" | jq -c '.[]')
+    echo ""
+    echo "Done. Granted identity admin access to $COUNT user(s)."
+    echo "Run 'just list-identity' to verify."
+
 # Add a Keto relation tuple (teacher -> class)
 add-test-relation:
     #!/bin/bash

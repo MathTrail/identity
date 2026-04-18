@@ -120,6 +120,16 @@ spec:
         - name: oathkeeper-proxy
           port: 4455
 
+    # Identity admin UIs — Keto Identity:admin#viewer check is performed inside Oathkeeper
+    - match: Host(`{{ .Values.hostname }}`) && PathPrefix(`/identity/`)
+      kind: Rule
+      middlewares:
+        - name: rate-limit-api
+        - name: security-headers
+      services:
+        - name: oathkeeper-proxy
+          port: 4455
+
     # Health — no auth or rate limit (required for liveness/readiness probes)
     - match: Host(`{{ .Values.hostname }}`) && PathPrefix(`/health/`)
       kind: Rule
