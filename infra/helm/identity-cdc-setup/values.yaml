@@ -32,7 +32,7 @@ risingwave:
   database: "dev"
 
 automq:
-  bootstrapServer: "automq.streaming.svc.cluster.local:9092"
+  bootstrapServer: "streaming-automq-kafka.streaming.svc.cluster.local:9092"
   credentialsSecret: "risingwave-automq-scram"
 
 apicurioUrl: "http://streaming-apicurio-apicurio-registry.streaming.svc.cluster.local:8080/apis/ccompat/v7"
@@ -60,8 +60,8 @@ sql: |
       schema_id   VARCHAR,
       state       VARCHAR,
       traits      JSONB,       -- first_name / last_name live here
-      created_at  TIMESTAMPTZ,
-      updated_at  TIMESTAMPTZ,
+      created_at  TIMESTAMP,
+      updated_at  TIMESTAMP,
       PRIMARY KEY (id)
   ) FROM kratos_pg_cdc TABLE 'public.identities';
 
@@ -71,7 +71,7 @@ sql: |
       value       VARCHAR,     -- email address
       via         VARCHAR,     -- 'email'
       verified    BOOLEAN,
-      created_at  TIMESTAMPTZ,
+      created_at  TIMESTAMP,
       PRIMARY KEY (id)
   ) FROM kratos_pg_cdc TABLE 'public.identity_verifiable_addresses';
 
@@ -80,22 +80,19 @@ sql: |
   --    IMPORTANT: traits structure matches Kratos identity schema (identity.schema.json).
   --    Traits are stored as: {"email": "...", "name": {"first": "...", "last": "..."}, "role": "..."}
   --    Verify against: SELECT traits FROM identities LIMIT 1;
+  --
+  --    NOTE: gen_random_uuid() and NOW() in SELECT are not available in RisingWave streaming MVs.
+  --    event_id is derived deterministically from identity + address IDs via md5().
+  --    occurred_at uses i.created_at (the source record timestamp).
   CREATE MATERIALIZED VIEW IF NOT EXISTS students_onboarding_ready AS
   SELECT
-      gen_random_uuid()::VARCHAR      AS event_id,
+      md5(i.id || iva.id)             AS event_id,
       i.id                            AS user_id,
       iva.value                       AS email,
       i.traits->'name'->>'first'      AS first_name,
       i.traits->'name'->>'last'       AS last_name,
       'student'                       AS role,
-      NOW()::VARCHAR                  AS occurred_at,
-      MAP {
-          'ce-specversion': '1.0',
-          'ce-type':        'com.mathtrail.students.onboarding.ready',
-          'ce-source':      '/mathtrail/risingwave',
-          'ce-id':          gen_random_uuid()::VARCHAR,
-          'ce-time':        to_char(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
-      }                               AS _headers
+      i.created_at::VARCHAR           AS occurred_at
   FROM identities i
   JOIN identity_verifiable_addresses iva
     ON iva.identity_id = i.id
@@ -105,17 +102,18 @@ sql: |
   -- 4. Kafka Sink → AutoMQ
   --    FORMAT PLAIN ENCODE PROTOBUF: produces Confluent Wire Format bytes
   --    schema_id resolved from Apicurio ccompat API by subject name.
+  --    force_append_only='true': required because JOIN produces a retract stream;
+  --    DELETE/UPDATE events are dropped (onboarding is an insert-only event).
+  --    NOTE: AutoMQ local dev uses PLAINTEXT listener — no SASL required.
   CREATE SINK IF NOT EXISTS students_onboarding_sink
   FROM students_onboarding_ready
   WITH (
-      connector                          = 'kafka',
-      properties.bootstrap.server        = '${AUTOMQ_BOOTSTRAP_SERVER}',
-      topic                              = 'students.onboarding.ready',
-      properties.sasl.mechanism          = 'SCRAM-SHA-512',
-      properties.security.protocol       = 'SASL_PLAINTEXT',
-      properties.sasl.jaas.config        = 'org.apache.kafka.common.security.scram.ScramLoginModule required username="${AUTOMQ_USERNAME}" password="${AUTOMQ_PASSWORD}";'
+      connector                   = 'kafka',
+      properties.bootstrap.server = '${AUTOMQ_BOOTSTRAP_SERVER}',
+      topic                       = 'students.onboarding.ready'
   )
   FORMAT PLAIN ENCODE PROTOBUF (
-      schema.registry = '${APICURIO_URL}',
-      message         = 'students.v1.StudentOnboardingReady'
+      schema.registry   = '${APICURIO_URL}',
+      message           = 'students.v1.StudentOnboardingReady',
+      force_append_only = 'true'
   );

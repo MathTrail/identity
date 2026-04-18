@@ -42,3 +42,21 @@ schemas:
         string created_at  = 7;
         string op          = 8;
       }
+
+  - subject: "students.onboarding.ready-value"
+    # Source: contracts/proto/students/v1/events.proto
+    # Produced by: RisingWave CDC sink (topic: students.onboarding.ready)
+    # Consumed by: mentor-api
+    proto: |
+      syntax = "proto3";
+      package students.v1;
+      option go_package = "github.com/mathtrail/contracts/gen/go/students/v1;studentsv1";
+      message StudentOnboardingReady {
+        string event_id   = 1;
+        string user_id    = 2;
+        string email      = 3;
+        string first_name = 4;
+        string last_name  = 5;
+        string role       = 6;
+        string occurred_at = 7;
+      }
