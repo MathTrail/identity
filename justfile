@@ -92,40 +92,33 @@ create-test-user:
       }' | jq .
     echo "Test user created"
 
-# -- Monitoring Access (Keto) --------------------------------------------------
+# -- Keto Access Management ---------------------------------------------------
 
-# Grant a user access to Grafana and Pyroscope via Oathkeeper
-# Usage: just grant-monitoring <kratos-user-uuid>
-grant-monitoring USER_ID:
+# Grant full admin access: monitoring UIs + identity admin UIs
+# Usage: just grant-admin <kratos-user-uuid>
+grant-admin USER_ID:
     #!/bin/bash
     set -e
-    echo "Granting monitoring access to {{ USER_ID }}..."
+    echo "Granting admin access to {{ USER_ID }}..."
     curl -sf -X PUT http://localhost:4467/admin/relation-tuples \
       -H "Content-Type: application/json" \
-      -d '{
-        "namespace": "Monitoring",
-        "object": "ui",
-        "relation": "viewer",
-        "subject_id": "{{ USER_ID }}"
-      }' | jq .
+      -d '{"namespace":"Monitoring","object":"ui","relation":"viewer","subject_id":"{{ USER_ID }}"}' | jq .
+    curl -sf -X PUT http://localhost:4467/admin/relation-tuples \
+      -H "Content-Type: application/json" \
+      -d '{"namespace":"Identity","object":"admin","relation":"viewer","subject_id":"{{ USER_ID }}"}' | jq .
     echo "Done."
 
-# Revoke monitoring access from a user
-# Usage: just revoke-monitoring <kratos-user-uuid>
-revoke-monitoring USER_ID:
+# Revoke full admin access (monitoring + identity)
+# Usage: just revoke-admin <kratos-user-uuid>
+revoke-admin USER_ID:
     #!/bin/bash
     set -e
-    echo "Revoking monitoring access from {{ USER_ID }}..."
+    echo "Revoking admin access from {{ USER_ID }}..."
     curl -sf -X DELETE \
       "http://localhost:4467/admin/relation-tuples?namespace=Monitoring&object=ui&relation=viewer&subject_id={{ USER_ID }}"
+    curl -sf -X DELETE \
+      "http://localhost:4467/admin/relation-tuples?namespace=Identity&object=admin&relation=viewer&subject_id={{ USER_ID }}"
     echo "Done."
-
-# Check if a user has monitoring access (returns {allowed: true/false})
-# Usage: just check-monitoring <kratos-user-uuid>
-check-monitoring USER_ID:
-    curl -sf -X POST http://localhost:4466/relation-tuples/check \
-      -H "Content-Type: application/json" \
-      -d '{"namespace":"Monitoring","object":"ui","relation":"viewer","subject_id":"{{ USER_ID }}"}' | jq .
 
 # List all users with monitoring access
 list-monitoring:
@@ -167,41 +160,6 @@ seed-monitoring:
     echo ""
     echo "Done. Granted monitoring access to $COUNT user(s)."
     echo "Run 'just list-monitoring' to verify."
-
-# -- Identity Admin Access (Keto) ----------------------------------------------
-
-# Grant a user access to identity admin UIs
-# Usage: just grant-identity <kratos-user-uuid>
-grant-identity USER_ID:
-    #!/bin/bash
-    set -e
-    echo "Granting identity admin access to {{ USER_ID }}..."
-    curl -sf -X PUT http://localhost:4467/admin/relation-tuples \
-      -H "Content-Type: application/json" \
-      -d '{
-        "namespace": "Identity",
-        "object": "admin",
-        "relation": "viewer",
-        "subject_id": "{{ USER_ID }}"
-      }' | jq .
-    echo "Done."
-
-# Revoke identity admin access from a user
-# Usage: just revoke-identity <kratos-user-uuid>
-revoke-identity USER_ID:
-    #!/bin/bash
-    set -e
-    echo "Revoking identity admin access from {{ USER_ID }}..."
-    curl -sf -X DELETE \
-      "http://localhost:4467/admin/relation-tuples?namespace=Identity&object=admin&relation=viewer&subject_id={{ USER_ID }}"
-    echo "Done."
-
-# Check if a user has identity admin access (returns {allowed: true/false})
-# Usage: just check-identity <kratos-user-uuid>
-check-identity USER_ID:
-    curl -sf -X POST http://localhost:4466/relation-tuples/check \
-      -H "Content-Type: application/json" \
-      -d '{"namespace":"Identity","object":"admin","relation":"viewer","subject_id":"{{ USER_ID }}"}' | jq .
 
 # List all users with identity admin access
 list-identity:
