@@ -98,7 +98,7 @@ create-test-user:
 # Usage: just grant-admin <kratos-user-uuid>
 grant-admin USER_ID:
     #!/bin/bash
-    set -e
+    set -eo pipefail
     echo "Granting admin access to {{ USER_ID }}..."
     curl -sf -X PUT http://localhost:4467/admin/relation-tuples \
       -H "Content-Type: application/json" \
@@ -112,7 +112,7 @@ grant-admin USER_ID:
 # Usage: just revoke-admin <kratos-user-uuid>
 revoke-admin USER_ID:
     #!/bin/bash
-    set -e
+    set -eo pipefail
     echo "Revoking admin access from {{ USER_ID }}..."
     curl -sf -X DELETE \
       "http://localhost:4467/admin/relation-tuples?namespace=Monitoring&object=ui&relation=viewer&subject_id={{ USER_ID }}"
@@ -122,7 +122,7 @@ revoke-admin USER_ID:
 
 # List all users with monitoring access
 list-monitoring:
-    curl -sf "http://localhost:4466/admin/relation-tuples?namespace=Monitoring&object=ui&relation=viewer" | jq '.relation_tuples[].subject_id'
+    curl -sf "http://localhost:4466/relation-tuples?namespace=Monitoring&object=ui&relation=viewer" | jq '.relation_tuples[].subject_id'
 
 # Add a Keto relation tuple (teacher -> class)
 add-test-relation:

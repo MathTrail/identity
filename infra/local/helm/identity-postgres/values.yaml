@@ -26,10 +26,11 @@ postgresql:
       wal_level = logical
 
     initdb:
+      user: postgres
+      password: "mathtrail"
       scripts:
         init.sql: |
-          -- Run as postgres superuser.
-          SET SESSION AUTHORIZATION postgres;
+          -- Run as postgres superuser (ensured by initdb.user: postgres above).
 
           -- Create pgbouncer_auth role (idempotent).
           DO $$
