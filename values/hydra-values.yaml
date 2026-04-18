@@ -12,7 +12,7 @@ hydra:
 
     urls:
       self:
-        issuer: http://localhost:4444
+        issuer: https://mathtrail.localhost
       login: http://localhost:8090/auth/login
       consent: http://localhost:8090/auth/consent
       logout: http://localhost:8090/auth/logout

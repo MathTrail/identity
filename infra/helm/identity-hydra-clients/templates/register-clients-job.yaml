@@ -1,0 +1,43 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: register-hydra-clients
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+        - name: wait-hydra
+          image: curlimages/curl:8.12.1
+          command:
+            - sh
+            - -c
+            - until curl -sf http://hydra-admin:4445/health/ready; do echo "waiting for Hydra..."; sleep 3; done
+      containers:
+        - name: register
+          image: curlimages/curl:8.12.1
+          command:
+            - sh
+            - -c
+            - |
+              # PUT is idempotent — creates or updates the client.
+              curl -sf -X PUT http://hydra-admin:4445/admin/clients/minio-console \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "client_id": "minio-console",
+                  "client_secret": "minio-oidc-local",
+                  "client_name": "MinIO Console",
+                  "grant_types": ["authorization_code", "refresh_token"],
+                  "response_types": ["code"],
+                  "scope": "openid profile email",
+                  "redirect_uris": ["https://minio.{{ .Values.hostname }}/oauth_callback"],
+                  "token_endpoint_auth_method": "client_secret_basic",
+                  "audience": []
+                }'
+              echo "Hydra clients registered."

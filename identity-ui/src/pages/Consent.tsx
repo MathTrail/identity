@@ -13,6 +13,10 @@ import {
 import { Button } from '@/components/ui/button'
 import { AuthLayout } from '@/components/auth/AuthLayout'
 
+const TRUSTED_CLIENTS: Record<string, Record<string, string>> = {
+  'minio-console': { minio_policy: 'consoleAdmin' },
+}
+
 export function Consent() {
   const [searchParams] = useSearchParams()
   const [request, setRequest] = useState<OAuth2ConsentRequest | null>(null)
@@ -21,9 +25,26 @@ export function Consent() {
 
   useEffect(() => {
     if (!challenge) return
-    hydra
-      .getOAuth2ConsentRequest({ consentChallenge: challenge })
-      .then(({ data }) => setRequest(data))
+    hydra.getOAuth2ConsentRequest({ consentChallenge: challenge }).then(({ data }) => {
+      const clientId = data.client?.client_id ?? ''
+      const extraClaims = TRUSTED_CLIENTS[clientId]
+      if (extraClaims || data.skip) {
+        hydra.acceptOAuth2ConsentRequest({
+          consentChallenge: challenge,
+          acceptOAuth2ConsentRequest: {
+            grant_scope: data.requested_scope ?? [],
+            grant_access_token_audience: data.requested_access_token_audience ?? [],
+            remember: true,
+            session: {
+              access_token: extraClaims ?? {},
+              id_token: extraClaims ?? {},
+            },
+          },
+        }).then(({ data: r }) => { window.location.href = r.redirect_to })
+        return
+      }
+      setRequest(data)
+    })
   }, [challenge])
 
   if (!request) return null

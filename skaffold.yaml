@@ -108,6 +108,12 @@ deploy:
           image.repository: "{{.IMAGE_REPO_identity_ui}}"
           image.tag: "{{.IMAGE_TAG_identity_ui}}"
 
+      # --- Hydra client registration (post-Hydra deploy, idempotent) ---
+      - name: identity-hydra-clients
+        chartPath: infra/helm/identity-hydra-clients
+        namespace: "{{.IDENTITY_NAMESPACE}}"
+        wait: true
+
 portForward:
   - resourceType: service
     resourceName: kratos-public

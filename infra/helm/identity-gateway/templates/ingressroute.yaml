@@ -130,6 +130,20 @@ spec:
         - name: oathkeeper-proxy
           port: 4455
 
+    # Hydra OIDC discovery + JWKS — public by OIDC spec
+    - match: Host(`{{ .Values.hostname }}`) && PathPrefix(`/.well-known/`)
+      kind: Rule
+      services:
+        - name: hydra-public
+          port: 4444
+
+    # Hydra OAuth2 authorization flow — auth happens inside Hydra/Kratos
+    - match: Host(`{{ .Values.hostname }}`) && PathPrefix(`/oauth2/`)
+      kind: Rule
+      services:
+        - name: hydra-public
+          port: 4444
+
     # Health — no auth or rate limit (required for liveness/readiness probes)
     - match: Host(`{{ .Values.hostname }}`) && PathPrefix(`/health/`)
       kind: Rule
@@ -197,6 +211,20 @@ spec:
 ---
 # MinIO Console subdomain: minio.mathtrail.localhost → Oathkeeper → MinIO Console.
 # Separate host avoids /api/v1 conflict with mentor-api on the main domain.
+---
+# Auto-redirect /login → MinIO OIDC initiation endpoint so users already authenticated in Kratos
+# land in the Console without clicking anything. Regex anchors to $ so /login?error=... is unaffected.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: minio-oidc-auto-login
+  namespace: {{ .Values.identityNamespace }}
+spec:
+  redirectRegex:
+    regex: "^https://minio\\.{{ .Values.hostname }}/login$"
+    replacement: "https://minio.{{ .Values.hostname }}/api/v1/login?idp_name=MathTrail"
+    permanent: false
+---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
@@ -209,6 +237,7 @@ spec:
     - match: Host(`minio.{{ .Values.hostname }}`)
       kind: Rule
       middlewares:
+        - name: minio-oidc-auto-login
         - name: rate-limit-api
         - name: security-headers
       services:

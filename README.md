@@ -167,18 +167,6 @@ After that, the following URLs are accessible:
 | Keto Read | https://mathtrail.localhost/identity/keto/ |
 | Oathkeeper API | https://mathtrail.localhost/identity/oathkeeper/ |
 
-To bulk-grant access after a rebuild (monitoring: admin+mentor; identity: admin only):
-
-```bash
-just seed-monitoring
-just seed-identity
-```
-
-### Default credentials (local dev only)
-
-| Service | Username | Password | Secret |
-|---------|----------|----------|--------|
-| MinIO Console | `minioadmin` | `minioadmin` | `streaming/minio-root-creds` |
 
 ## Data
 
