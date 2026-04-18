@@ -108,7 +108,7 @@ grant-monitoring USER_ID:
         "relation": "viewer",
         "subject_id": "{{ USER_ID }}"
       }' | jq .
-    echo "Done. User can now access /observability/grafana/ and /observability/pyroscope/"
+    echo "Done."
 
 # Revoke monitoring access from a user
 # Usage: just revoke-monitoring <kratos-user-uuid>

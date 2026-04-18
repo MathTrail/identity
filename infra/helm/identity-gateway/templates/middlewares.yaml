@@ -109,6 +109,19 @@ spec:
     replacement: "https://{{ .Values.hostname }}/observability/eventcatalog/"
     permanent: true
 ---
+# RisingWave API forwardAuth: Oathkeeper proxy strips trailing slashes (path.Clean).
+# /api/* paths on the risingwave subdomain use forwardAuth (decision API) instead of
+# Oathkeeper proxy, so Traefik preserves the trailing slash when forwarding to the backend.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: forwardauth-risingwave
+  namespace: {{ .Values.identityNamespace }}
+spec:
+  forwardAuth:
+    address: "http://oathkeeper-api.{{ .Values.identityNamespace }}.svc.cluster.local:4456/decisions"
+    trustForwardHeader: true
+---
 # Apicurio root redirect: / → /apis (the actual UI path in Apicurio 3.x).
 # Apicurio generates an absolute redirect using its cluster-internal hostname,
 # so we intercept at Traefik before the request reaches Oathkeeper/Apicurio.

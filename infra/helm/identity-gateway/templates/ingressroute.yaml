@@ -136,8 +136,24 @@ spec:
   tls:
     secretName: mathtrail-tls-secret
 ---
+# ExternalName service: allows identity-namespace IngressRoute to reference RisingWave in streaming.
+# Traefik's CRD provider does not allow cross-namespace service refs without allowCrossNamespace.
+apiVersion: v1
+kind: Service
+metadata:
+  name: risingwave-meta-ext
+  namespace: {{ .Values.identityNamespace }}
+spec:
+  type: ExternalName
+  externalName: risingwave-frontend-meta-headless.streaming.svc.cluster.local
+  ports:
+    - port: 5691
+      protocol: TCP
+---
 # RisingWave Dashboard subdomain: risingwave.mathtrail.localhost → Oathkeeper → RisingWave meta:5691.
 # Next.js SPA uses root-relative paths; subdomain gives it its own origin.
+# /api/* uses forwardAuth (Oathkeeper decision API) + direct proxy to preserve trailing slashes.
+# All other paths go through Oathkeeper proxy with rewrite-risingwave-slash for page routes.
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
@@ -147,6 +163,16 @@ spec:
   entryPoints:
     - websecure
   routes:
+    - match: Host(`risingwave.{{ .Values.hostname }}`) && PathPrefix(`/api/`)
+      kind: Rule
+      priority: 200
+      middlewares:
+        - name: forwardauth-risingwave
+        - name: rate-limit-api
+        - name: security-headers
+      services:
+        - name: risingwave-meta-ext
+          port: 5691
     - match: Host(`risingwave.{{ .Values.hostname }}`)
       kind: Rule
       middlewares:

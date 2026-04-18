@@ -287,14 +287,32 @@ oathkeeper:
       mutators:
         - handler: noop
 
+    # RisingWave static assets — anonymous (/_next/static/... chunks).
+    # Bypasses Keto to prevent connection saturation when ~20 JS chunks load in parallel.
+    # /risingwave.svg is NOT here — it's only requested on authenticated pages, so the
+    # main rule handles it. Patterns must be mutually exclusive with mathtrail-risingwave-rule.
+    - id: "mathtrail-risingwave-assets-rule"
+      upstream:
+        url: "http://risingwave-frontend-meta-headless.streaming.svc.cluster.local:5691"
+      match:
+        methods: ["GET"]
+        url: "<http|https>://risingwave.mathtrail.localhost</_next/.*>"
+      authenticators:
+        - handler: anonymous
+      authorizer:
+        handler: allow
+      mutators:
+        - handler: noop
+
     # RisingWave Dashboard — served on risingwave.mathtrail.localhost subdomain.
     # Next.js SPA uses root-relative paths; subdomain gives it its own origin.
+    # Pattern excludes /_next/ paths (handled by mathtrail-risingwave-assets-rule above).
     - id: "mathtrail-risingwave-rule"
       upstream:
         url: "http://risingwave-frontend-meta-headless.streaming.svc.cluster.local:5691"
       match:
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
-        url: "<http|https>://risingwave.mathtrail.localhost<.*>"
+        url: "<http|https>://risingwave.mathtrail.localhost<|/|/[^_].*>"
       authenticators:
         - handler: cookie_session
       authorizer:
