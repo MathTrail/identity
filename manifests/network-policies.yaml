@@ -87,6 +87,16 @@ spec:
           port: 9001  # MinIO Console
         - protocol: TCP
           port: 5691  # RisingWave Dashboard
+    # Forward to ArgoCD in argocd namespace
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: argocd
+      ports:
+        - protocol: TCP
+          port: 80    # argocd-server ClusterIP port
+        - protocol: TCP
+          port: 8080  # argocd-server pod port (post-DNAT)
     # DNS resolution
     - ports:
         - protocol: UDP
