@@ -31,15 +31,17 @@ spec:
       ports:
         - protocol: TCP
           port: 8080
-    # Kratos session validation (intra-namespace)
+    # Kratos session validation + admin API proxy (intra-namespace)
     - to:
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: kratos
       ports:
         - protocol: TCP
-          port: 4433  # kratos-public
-    # Keto relation-tuple check (intra-namespace)
+          port: 4433  # kratos-public (session check)
+        - protocol: TCP
+          port: 4434  # kratos-admin (identity admin UI proxy)
+    # Keto relation-tuple check + read API proxy (intra-namespace)
     - to:
         - podSelector:
             matchLabels:
@@ -47,6 +49,22 @@ spec:
       ports:
         - protocol: TCP
           port: 4466  # keto-read
+    # Hydra admin API proxy (intra-namespace)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: hydra
+      ports:
+        - protocol: TCP
+          port: 4445  # hydra-admin
+    # Oathkeeper API proxy — self-referencing for /identity/oathkeeper rule
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: oathkeeper
+      ports:
+        - protocol: TCP
+          port: 4456  # oathkeeper-api
     # Forward to Grafana and Pyroscope in monitoring namespace
     - to:
         - namespaceSelector:

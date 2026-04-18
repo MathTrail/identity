@@ -383,6 +383,121 @@ oathkeeper:
             headers:
               X-User-ID: "{{ print .Subject }}"
 
+    - id: "mathtrail-argocd-rule"
+      upstream:
+        url: "http://argocd-server.argocd.svc.cluster.local:80"
+        strip_path: "/observability/argocd"
+      match:
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
+        url: "<http|https>://mathtrail.localhost/observability/argocd<|/|/.*>"
+      authenticators:
+        - handler: cookie_session
+      authorizer:
+        handler: remote_json
+        config:
+          remote: http://keto-read/relation-tuples/check
+          payload: |
+            {
+              "namespace": "Monitoring",
+              "object": "ui",
+              "relation": "viewer",
+              "subject_id": "{{ print .Subject }}"
+            }
+      mutators:
+        - handler: noop
+
+    - id: "mathtrail-identity-kratos-admin-rule"
+      upstream:
+        url: "http://kratos-admin"
+        strip_path: "/identity/kratos"
+      match:
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
+        url: "<http|https>://mathtrail.localhost/identity/kratos<|/|/.*>"
+      authenticators:
+        - handler: cookie_session
+      authorizer:
+        handler: remote_json
+        config:
+          remote: http://keto-read/relation-tuples/check
+          payload: |
+            {
+              "namespace": "Identity",
+              "object": "admin",
+              "relation": "viewer",
+              "subject_id": "{{ print .Subject }}"
+            }
+      mutators:
+        - handler: noop
+
+    - id: "mathtrail-identity-hydra-admin-rule"
+      upstream:
+        url: "http://hydra-admin:4445"
+        strip_path: "/identity/hydra"
+      match:
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
+        url: "<http|https>://mathtrail.localhost/identity/hydra<|/|/.*>"
+      authenticators:
+        - handler: cookie_session
+      authorizer:
+        handler: remote_json
+        config:
+          remote: http://keto-read/relation-tuples/check
+          payload: |
+            {
+              "namespace": "Identity",
+              "object": "admin",
+              "relation": "viewer",
+              "subject_id": "{{ print .Subject }}"
+            }
+      mutators:
+        - handler: noop
+
+    - id: "mathtrail-identity-keto-read-rule"
+      upstream:
+        url: "http://keto-read"
+        strip_path: "/identity/keto"
+      match:
+        methods: ["GET", "POST"]
+        url: "<http|https>://mathtrail.localhost/identity/keto<|/|/.*>"
+      authenticators:
+        - handler: cookie_session
+      authorizer:
+        handler: remote_json
+        config:
+          remote: http://keto-read/relation-tuples/check
+          payload: |
+            {
+              "namespace": "Identity",
+              "object": "admin",
+              "relation": "viewer",
+              "subject_id": "{{ print .Subject }}"
+            }
+      mutators:
+        - handler: noop
+
+    - id: "mathtrail-identity-oathkeeper-api-rule"
+      upstream:
+        url: "http://oathkeeper-api:4456"
+        strip_path: "/identity/oathkeeper"
+      match:
+        methods: ["GET"]
+        url: "<http|https>://mathtrail.localhost/identity/oathkeeper<|/|/.*>"
+      authenticators:
+        - handler: cookie_session
+      authorizer:
+        handler: remote_json
+        config:
+          remote: http://keto-read/relation-tuples/check
+          payload: |
+            {
+              "namespace": "Identity",
+              "object": "admin",
+              "relation": "viewer",
+              "subject_id": "{{ print .Subject }}"
+            }
+      mutators:
+        - handler: noop
+
   resources:
     requests:
       cpu: 100m

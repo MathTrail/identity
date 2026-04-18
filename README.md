@@ -40,6 +40,7 @@ graph LR
         HydraAdmin["Hydra Admin"]
         KetoRead["Keto Read"]
         OathkeeperAPI["Oathkeeper API"]
+        ArgoCD["ArgoCD"]
     end
 
     subgraph Secrets ["Secrets"]
@@ -63,6 +64,7 @@ graph LR
     OK -- "proxy" --> HydraAdmin
     OK -- "proxy" --> KetoRead
     OK -- "proxy" --> OathkeeperAPI
+    OK -- "proxy" --> ArgoCD
     Hydra -- "consent UI" --> UI
     ESO -- "DSN secrets" --> Kratos & Hydra & Keto
 
@@ -81,7 +83,7 @@ graph LR
     class PGB,PG dataCls
     class Vault,ESO secretCls
     class Browser actorCls
-    class MentorAPI,Grafana,Pyroscope,KafkaUI,Apicurio,EventCatalog,MinIO,KratosAdmin,HydraAdmin,KetoRead,OathkeeperAPI dstCls
+    class MentorAPI,Grafana,Pyroscope,KafkaUI,Apicurio,EventCatalog,MinIO,KratosAdmin,HydraAdmin,KetoRead,OathkeeperAPI,ArgoCD dstCls
 ```
 
 ## Quick Start
@@ -124,6 +126,7 @@ All traffic enters through Traefik at `https://mathtrail.localhost` and is route
 | `/observability/eventcatalog*` | streaming-eventcatalog-eventcatalog-local.streaming | cookie_session + `Monitoring:ui#viewer` |
 | `/observability/minio*` | streaming-minio-console.streaming | cookie_session + `Monitoring:ui#viewer` |
 | `/observability/risingwave*` | risingwave-frontend-meta-headless.streaming | cookie_session + `Monitoring:ui#viewer` |
+| `/observability/argocd*` | argocd-server.argocd | cookie_session + `Monitoring:ui#viewer` |
 | `/identity/kratos/*` | kratos-admin.identity | cookie_session + `Identity:admin#viewer` |
 | `/identity/hydra/*` | hydra-admin.identity | cookie_session + `Identity:admin#viewer` |
 | `/identity/keto/*` | keto-read.identity | cookie_session + `Identity:admin#viewer` |
@@ -162,10 +165,11 @@ After that, the following URLs are accessible:
 | RisingWave Dashboard | https://risingwave.mathtrail.localhost/ (redirects from /observability/risingwave) |
 | Grafana | https://mathtrail.localhost/observability/grafana/ |
 | Pyroscope | https://mathtrail.localhost/observability/pyroscope/ |
-| Kratos Admin | https://mathtrail.localhost/identity/kratos/ |
-| Hydra Admin | https://mathtrail.localhost/identity/hydra/ |
-| Keto Read | https://mathtrail.localhost/identity/keto/ |
-| Oathkeeper API | https://mathtrail.localhost/identity/oathkeeper/ |
+| ArgoCD | https://mathtrail.localhost/observability/argocd/ |
+| Kratos Admin API (no UI) | https://mathtrail.localhost/identity/kratos/health/alive |
+| Hydra Admin API (no UI) | https://mathtrail.localhost/identity/hydra/health/alive |
+| Keto Read API (no UI) | https://mathtrail.localhost/identity/keto/health/alive |
+| Oathkeeper API (no UI) | https://mathtrail.localhost/identity/oathkeeper/health/alive |
 
 
 ## Data
