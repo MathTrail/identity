@@ -1,9 +1,18 @@
 # Ory Hydra - OAuth2/OIDC Token Issuer
 # Local development configuration
 
+# secret.enabled=false + nameOverride: Hydra reads SECRETS_SYSTEM, SECRETS_COOKIE, and DSN
+# from the K8s Secret named 'hydra-external-secret', created by ESO from Vault.
+# This prevents the chart from generating a new random SECRETS_SYSTEM on every helm upgrade,
+# which would invalidate the signing keys stored in the database.
+secret:
+  enabled: false
+  nameOverride: hydra-external-secret
+
 hydra:
   config:
-    dsn: "postgres://mathtrail:mathtrail@identity-postgres-pgbouncer.identity:6432/hydra?sslmode=disable"
+    # dsn is intentionally omitted here — loaded from hydra-external-secret via env.
+    # When secret.enabled=false + nameOverride is set, the chart uses 'dsn-loaded-from-env'.
 
     serve:
       public:
@@ -26,12 +35,6 @@ hydra:
 
     log:
       level: info
-
-  # Secrets managed externally via Vault KV + ExternalSecret.
-  # ExternalSecret 'hydra-external-secret' in namespace mathtrail creates the K8s Secret.
-  secret:
-    enabled: false
-    nameOverride: hydra-external-secret
 
   dev: true
 

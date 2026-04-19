@@ -2,6 +2,11 @@ hostname: mathtrail.localhost
 identityNamespace: identity
 issuerName: mathtrail-internal-ca-issuer
 
+# Hydra PostgreSQL DSN — written to Vault by vault-seed-job on fresh cluster install.
+# Keeps the DSN in one place rather than duplicating between hydra-values.yaml and the seed job.
+hydra:
+  dsn: "postgres://mathtrail:mathtrail@identity-postgres-pgbouncer.identity:6432/hydra?sslmode=disable"
+
 # Rate limits — permissive for local dev, override in prod values
 rateLimitAuth:
   average: 100

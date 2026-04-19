@@ -88,6 +88,17 @@ spec:
               vault kv put secret/local/mathtrail-identity/kratos \
                 google_client_id="$GOOGLE_CLIENT_ID" \
                 google_client_secret="$GOOGLE_CLIENT_SECRET"
+              # Hydra OAuth2 signing secrets — generate once, never overwrite.
+              # Stable SECRETS_SYSTEM is required: rotating it invalidates all existing signing keys in the DB.
+              if ! vault kv get -field=system_secret secret/local/mathtrail-identity/hydra > /dev/null 2>&1; then
+                vault kv put secret/local/mathtrail-identity/hydra \
+                  system_secret="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 32)" \
+                  cookie_secret="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 32)" \
+                  dsn="{{ .Values.hydra.dsn }}"
+                echo "Vault seeded with Hydra secrets."
+              else
+                echo "Hydra secrets already exist in Vault, skipping."
+              fi
               echo "Vault seeded."
           env:
             - name: GOOGLE_CLIENT_ID
