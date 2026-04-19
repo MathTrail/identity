@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { LoginFlow } from '@ory/client'
 import { kratos, flowActionUrl } from '@/lib/kratos'
+import { hydra } from '@/lib/hydra'
 import { useAuthStore } from '@/store/auth'
 import { Node } from '@/components/ory/Node'
 import {
@@ -20,9 +21,21 @@ export function Login() {
   const [flow, setFlow] = useState<LoginFlow | null>(null)
   const session = useAuthStore((s) => s.session)
   const initialized = useAuthStore((s) => s.initialized)
+  const loginChallenge = searchParams.get('login_challenge') ?? ''
 
   useEffect(() => {
     if (!initialized) return
+    if (session && loginChallenge) {
+      hydra.acceptOAuth2LoginRequest({
+        loginChallenge,
+        acceptOAuth2LoginRequest: {
+          subject: session.identity!.id!,
+          remember: true,
+          remember_for: 0,
+        },
+      }).then(({ data }) => { window.location.href = data.redirect_to })
+      return
+    }
     if (session) return
     const flowId = searchParams.get('flow')
     if (!flowId) {
@@ -34,9 +47,9 @@ export function Login() {
       .catch(() => {
         window.location.href = '/api/kratos/self-service/login/browser'
       })
-  }, [searchParams, session, initialized])
+  }, [searchParams, session, initialized, loginChallenge])
 
-  if (session) {
+  if (session && !loginChallenge) {
     const handleLogout = async () => {
       try {
         const { data } = await kratos.createBrowserLogoutFlow()

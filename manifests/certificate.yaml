@@ -12,7 +12,10 @@ spec:
   renewBefore: 720h   # 30 days
   dnsNames:
     - mathtrail.localhost
+    - localhost
     - minio.mathtrail.localhost
+    - risingwave.mathtrail.localhost
+    - argocd.mathtrail.localhost
   issuerRef:
     name: mathtrail-internal-ca-issuer
     kind: ClusterIssuer

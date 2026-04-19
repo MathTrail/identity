@@ -386,10 +386,9 @@ oathkeeper:
     - id: "mathtrail-argocd-rule"
       upstream:
         url: "http://argocd-server.argocd.svc.cluster.local:80"
-        strip_path: "/observability/argocd"
       match:
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
-        url: "<http|https>://mathtrail.localhost/observability/argocd<|/|/.*>"
+        url: "<http|https>://argocd.mathtrail.localhost<.*>"
       authenticators:
         - handler: cookie_session
       authorizer:

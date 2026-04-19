@@ -13,6 +13,9 @@ spec:
   dnsNames:
     - {{ .Values.hostname }}
     - localhost
+    - minio.{{ .Values.hostname }}
+    - risingwave.{{ .Values.hostname }}
+    - argocd.{{ .Values.hostname }}
   issuerRef:
     name: {{ .Values.issuerName }}
     kind: ClusterIssuer

@@ -26,18 +26,35 @@ spec:
             - sh
             - -c
             - |
-              # PUT is idempotent — creates or updates the client.
-              curl -sf -X PUT http://hydra-admin:4445/admin/clients/minio-console \
-                -H "Content-Type: application/json" \
-                -d '{
-                  "client_id": "minio-console",
-                  "client_secret": "minio-oidc-local",
-                  "client_name": "MinIO Console",
-                  "grant_types": ["authorization_code", "refresh_token"],
-                  "response_types": ["code"],
-                  "scope": "openid profile email",
-                  "redirect_uris": ["https://minio.{{ .Values.hostname }}/oauth_callback"],
-                  "token_endpoint_auth_method": "client_secret_basic",
-                  "audience": []
-                }'
+              # PUT updates an existing client; POST creates a new one.
+              # upsert(): try PUT first, fall back to POST if the client doesn't exist yet.
+              upsert() {
+                ID=$1; PAYLOAD=$2
+                curl -sf -X PUT "http://hydra-admin:4445/admin/clients/$ID" \
+                  -H "Content-Type: application/json" -d "$PAYLOAD" \
+                  || curl -sf -X POST "http://hydra-admin:4445/admin/clients" \
+                  -H "Content-Type: application/json" -d "$PAYLOAD"
+              }
+              upsert minio-console '{
+                "client_id": "minio-console",
+                "client_secret": "minio-oidc-local",
+                "client_name": "MinIO Console",
+                "grant_types": ["authorization_code", "refresh_token"],
+                "response_types": ["code"],
+                "scope": "openid profile email",
+                "redirect_uris": ["https://minio.{{ .Values.hostname }}/oauth_callback"],
+                "token_endpoint_auth_method": "client_secret_basic",
+                "audience": []
+              }'
+              upsert argocd '{
+                "client_id": "argocd",
+                "client_secret": "argocd-oidc-local",
+                "client_name": "ArgoCD",
+                "grant_types": ["authorization_code", "refresh_token"],
+                "response_types": ["code"],
+                "scope": "openid profile email",
+                "redirect_uris": ["https://argocd.{{ .Values.hostname }}/auth/callback"],
+                "token_endpoint_auth_method": "client_secret_basic",
+                "audience": []
+              }'
               echo "Hydra clients registered."

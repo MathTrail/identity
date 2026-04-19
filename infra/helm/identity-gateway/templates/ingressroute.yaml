@@ -65,6 +65,17 @@ spec:
         - name: oathkeeper-proxy
           port: 4455
 
+    # ArgoCD redirect — /observability/argocd → argocd.mathtrail.localhost subdomain.
+    # ArgoCD uses <base href="/"> so its assets resolve at domain root, conflicting with identity-ui.
+    - match: Host(`{{ .Values.hostname }}`) && PathPrefix(`/observability/argocd`)
+      kind: Rule
+      priority: 200
+      middlewares:
+        - name: redirect-argocd-subdomain
+      services:
+        - name: oathkeeper-proxy
+          port: 4455
+
     # MinIO redirect — /observability/minio → minio.mathtrail.localhost subdomain.
     # MinIO Console's JS hardcodes /api/v1 which conflicts with mentor-api; subdomain isolates it.
     - match: Host(`{{ .Values.hostname }}`) && PathPrefix(`/observability/minio`)
@@ -238,6 +249,39 @@ spec:
       kind: Rule
       middlewares:
         - name: minio-oidc-auto-login
+        - name: rate-limit-api
+        - name: security-headers
+      services:
+        - name: oathkeeper-proxy
+          port: 4455
+  tls:
+    secretName: mathtrail-tls-secret
+---
+# ArgoCD subdomain: argocd.mathtrail.localhost → Oathkeeper → ArgoCD server.
+# ArgoCD uses <base href="/"> so its assets resolve at domain root; subdomain gives it its own origin.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-argocd-subdomain
+  namespace: {{ .Values.identityNamespace }}
+spec:
+  redirectRegex:
+    regex: "^https://{{ .Values.hostname }}/observability/argocd(.*)"
+    replacement: "https://argocd.{{ .Values.hostname }}${1}"
+    permanent: false
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: mathtrail-argocd
+  namespace: {{ .Values.identityNamespace }}
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`argocd.{{ .Values.hostname }}`)
+      kind: Rule
+      middlewares:
         - name: rate-limit-api
         - name: security-headers
       services:

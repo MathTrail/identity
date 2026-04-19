@@ -126,7 +126,7 @@ All traffic enters through Traefik at `https://mathtrail.localhost` and is route
 | `/observability/eventcatalog*` | streaming-eventcatalog-eventcatalog-local.streaming | cookie_session + `Monitoring:ui#viewer` |
 | `/observability/minio*` | streaming-minio-console.streaming | cookie_session + `Monitoring:ui#viewer` |
 | `/observability/risingwave*` | risingwave-frontend-meta-headless.streaming | cookie_session + `Monitoring:ui#viewer` |
-| `/observability/argocd*` | argocd-server.argocd | cookie_session + `Monitoring:ui#viewer` |
+| `/observability/argocd*` | → argocd.mathtrail.localhost (redirect) | — |
 | `/identity/kratos/*` | kratos-admin.identity | cookie_session + `Identity:admin#viewer` |
 | `/identity/hydra/*` | hydra-admin.identity | cookie_session + `Identity:admin#viewer` |
 | `/identity/keto/*` | keto-read.identity | cookie_session + `Identity:admin#viewer` |
@@ -165,7 +165,7 @@ After that, the following URLs are accessible:
 | RisingWave Dashboard | https://risingwave.mathtrail.localhost/ (redirects from /observability/risingwave) |
 | Grafana | https://mathtrail.localhost/observability/grafana/ |
 | Pyroscope | https://mathtrail.localhost/observability/pyroscope/ |
-| ArgoCD | https://mathtrail.localhost/observability/argocd/ |
+| ArgoCD | https://argocd.mathtrail.localhost/ (redirects from /observability/argocd) |
 | Kratos Admin API (no UI) | https://mathtrail.localhost/identity/kratos/health/alive |
 | Hydra Admin API (no UI) | https://mathtrail.localhost/identity/hydra/health/alive |
 | Keto Read API (no UI) | https://mathtrail.localhost/identity/keto/health/alive |

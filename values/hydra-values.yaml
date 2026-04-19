@@ -9,13 +9,15 @@ hydra:
       public:
         cors:
           enabled: true
+      cookies:
+        same_site_mode: Lax
 
     urls:
       self:
         issuer: https://mathtrail.localhost
-      login: http://localhost:8090/auth/login
-      consent: http://localhost:8090/auth/consent
-      logout: http://localhost:8090/auth/logout
+      login: https://mathtrail.localhost/auth/login
+      consent: https://mathtrail.localhost/auth/consent
+      logout: https://mathtrail.localhost/auth/logout
 
     oidc:
       subject_identifiers:

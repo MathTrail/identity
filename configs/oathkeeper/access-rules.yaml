@@ -346,13 +346,15 @@
           X-User-ID: "{{ print .Subject }}"
 
 # ArgoCD - cookie session + Keto Monitoring:ui#viewer check
+# Served on argocd.mathtrail.localhost subdomain — ArgoCD uses <base href="/">
+# so its assets resolve at root, which would conflict with identity-ui on the main domain.
+# /observability/argocd redirects to this subdomain via Traefik redirect-argocd-subdomain middleware.
 - id: "mathtrail-argocd-rule"
   upstream:
     url: "http://argocd-server.argocd.svc.cluster.local:80"
-    strip_path: "/observability/argocd"
   match:
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
-    url: "<http|https>://mathtrail.localhost/observability/argocd<|/|/.*>"
+    url: "<http|https>://argocd.mathtrail.localhost<.*>"
   authenticators:
     - handler: cookie_session
   authorizer:

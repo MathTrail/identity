@@ -15,6 +15,7 @@ import { AuthLayout } from '@/components/auth/AuthLayout'
 
 const TRUSTED_CLIENTS: Record<string, Record<string, string>> = {
   'minio-console': { minio_policy: 'consoleAdmin' },
+  'argocd': {},
 }
 
 export function Consent() {
