@@ -6,6 +6,11 @@ kind: Middleware
 metadata:
   name: rate-limit-auth
   namespace: {{ .Values.identityNamespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 spec:
   rateLimit:
     average: {{ .Values.rateLimitAuth.average }}
@@ -20,6 +25,11 @@ kind: Middleware
 metadata:
   name: rate-limit-api
   namespace: {{ .Values.identityNamespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 spec:
   rateLimit:
     average: 100
@@ -34,6 +44,11 @@ kind: Middleware
 metadata:
   name: circuit-breaker
   namespace: {{ .Values.identityNamespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 spec:
   circuitBreaker:
     expression: ResponseCodeRatio(500, 600, 0, 600) > 0.30
@@ -46,6 +61,11 @@ kind: Middleware
 metadata:
   name: security-headers
   namespace: {{ .Values.identityNamespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 spec:
   headers:
     stsSeconds: 31536000
@@ -62,6 +82,11 @@ kind: Middleware
 metadata:
   name: redirect-minio-subdomain
   namespace: {{ .Values.identityNamespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 spec:
   redirectRegex:
     regex: "^https://{{ .Values.hostname }}/observability/minio(/.*)?"
@@ -78,6 +103,11 @@ kind: Middleware
 metadata:
   name: rewrite-risingwave-slash
   namespace: {{ .Values.identityNamespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 spec:
   replacePathRegex:
     regex: "^(/[^/.]+)/$"
@@ -90,6 +120,11 @@ kind: Middleware
 metadata:
   name: redirect-risingwave-subdomain
   namespace: {{ .Values.identityNamespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 spec:
   redirectRegex:
     regex: "^https://{{ .Values.hostname }}/observability/risingwave(/.*)?"
@@ -103,6 +138,11 @@ kind: Middleware
 metadata:
   name: redirect-eventcatalog-slash
   namespace: {{ .Values.identityNamespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 spec:
   redirectRegex:
     regex: "^https://{{ .Values.hostname }}/observability/eventcatalog$"
@@ -117,6 +157,11 @@ kind: Middleware
 metadata:
   name: forwardauth-risingwave
   namespace: {{ .Values.identityNamespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 spec:
   forwardAuth:
     address: "http://oathkeeper-api.{{ .Values.identityNamespace }}.svc.cluster.local:4456/decisions"
@@ -130,6 +175,11 @@ kind: Middleware
 metadata:
   name: redirect-apicurio-root
   namespace: {{ .Values.identityNamespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 spec:
   redirectRegex:
     regex: "^https://{{ .Values.hostname }}/observability/apicurio/?$"

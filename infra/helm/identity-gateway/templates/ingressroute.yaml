@@ -6,6 +6,11 @@ kind: IngressRoute
 metadata:
   name: mathtrail
   namespace: {{ .Values.identityNamespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 spec:
   entryPoints:
     - websecure
@@ -178,6 +183,11 @@ kind: Service
 metadata:
   name: risingwave-meta-ext
   namespace: {{ .Values.identityNamespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 spec:
   type: ExternalName
   externalName: risingwave-frontend-meta-headless.streaming.svc.cluster.local
@@ -194,6 +204,11 @@ kind: IngressRoute
 metadata:
   name: mathtrail-risingwave
   namespace: {{ .Values.identityNamespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 spec:
   entryPoints:
     - websecure
@@ -230,6 +245,11 @@ kind: Middleware
 metadata:
   name: minio-oidc-auto-login
   namespace: {{ .Values.identityNamespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 spec:
   redirectRegex:
     regex: "^https://minio\\.{{ .Values.hostname }}/login$"
@@ -241,6 +261,11 @@ kind: IngressRoute
 metadata:
   name: mathtrail-minio
   namespace: {{ .Values.identityNamespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 spec:
   entryPoints:
     - websecure
@@ -264,6 +289,11 @@ kind: Middleware
 metadata:
   name: redirect-argocd-subdomain
   namespace: {{ .Values.identityNamespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 spec:
   redirectRegex:
     regex: "^https://{{ .Values.hostname }}/observability/argocd(.*)"
@@ -275,6 +305,11 @@ kind: IngressRoute
 metadata:
   name: mathtrail-argocd
   namespace: {{ .Values.identityNamespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 spec:
   entryPoints:
     - websecure
@@ -299,6 +334,11 @@ kind: Middleware
 metadata:
   name: oidc-callback-relay
   namespace: {{ .Values.identityNamespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 spec:
   redirectRegex:
     regex: "^https://localhost(/api/kratos/self-service/methods/oidc/callback/.*)"
@@ -310,6 +350,11 @@ kind: IngressRoute
 metadata:
   name: mathtrail-oidc-callback
   namespace: {{ .Values.identityNamespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 spec:
   entryPoints:
     - websecure

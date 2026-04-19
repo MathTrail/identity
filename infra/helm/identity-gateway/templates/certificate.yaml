@@ -6,6 +6,11 @@ kind: Certificate
 metadata:
   name: mathtrail-tls
   namespace: {{ .Values.identityNamespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 spec:
   secretName: mathtrail-tls-secret
   duration: 8760h     # 1 year

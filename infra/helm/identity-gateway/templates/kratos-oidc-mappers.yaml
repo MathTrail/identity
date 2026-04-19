@@ -6,6 +6,11 @@ kind: ConfigMap
 metadata:
   name: kratos-oidc-mappers
   namespace: {{ .Values.identityNamespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 data:
   oidc.google.jsonnet: |
     {{- .Files.Get "files/oidc.google.jsonnet" | nindent 4 }}
