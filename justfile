@@ -157,7 +157,7 @@ add-test-relation: _keto-write-pf
 # Bundle k6 load test scripts with esbuild
 bundle-k6:
     mkdir -p tests/load/dist
-    esbuild tests/load/scripts/main.js \
+    npx esbuild tests/load/scripts/main.js \
         --bundle \
         --format=esm \
         --external:k6 \
@@ -170,33 +170,55 @@ load-test: bundle-k6
     set -euo pipefail
 
     # Ensure k6 operator CRDs are present
+    kubectl create namespace k6-operator-system 2>/dev/null || true
+    kubectl label namespace k6-operator-system app.kubernetes.io/managed-by=Helm --overwrite
+    kubectl annotate namespace k6-operator-system \
+        meta.helm.sh/release-name=k6-operator \
+        meta.helm.sh/release-namespace=k6-operator-system \
+        --overwrite
     skaffold run -m identity-load-deps
 
-    # Clean previous run
+    # Clean previous run (including Jobs left by k6-operator after TestRun deletion)
     skaffold delete -m identity-load-tests 2>/dev/null || true
     kubectl delete testrun identity-registration-load-test -n {{ NAMESPACE }} --ignore-not-found 2>/dev/null || true
+    kubectl delete jobs -n {{ NAMESPACE }} -l k6_cr=identity-registration-load-test --ignore-not-found 2>/dev/null || true
 
     # Deploy TestRun + ConfigMap
     skaffold run -m identity-load-tests
 
-    # Wait for TestRun to appear (k6-operator creates it asynchronously)
+    # Wait for k6-operator to create the runner Job
     echo "Waiting for TestRun..."
-    for i in $(seq 1 30); do
-        kubectl get testrun identity-registration-load-test -n {{ NAMESPACE }} &>/dev/null && break
+    for i in $(seq 1 60); do
+        kubectl get job identity-registration-load-test-1 -n {{ NAMESPACE }} &>/dev/null && break
         sleep 1
     done
 
-    # Stream logs in background
+    # Wait for runner pod to appear
+    K6_POD=""
+    for i in $(seq 1 30); do
+        K6_POD=$(kubectl get pods -n {{ NAMESPACE }} \
+            -l job-name=identity-registration-load-test-1 \
+            --no-headers -o custom-columns=N:.metadata.name 2>/dev/null | head -1 || true)
+        [ -n "$K6_POD" ] && break
+        sleep 1
+    done
+
+    # Wait for pod to be Running, then stream logs to file in background
     echo "Test is running..."
-    kubectl logs -l k6_cr=identity-registration-load-test -n {{ NAMESPACE }} \
-        --all-containers --prefix -f 2>/dev/null &
+    kubectl wait pod/"$K6_POD" -n {{ NAMESPACE }} --for=condition=Ready --timeout=60s 2>/dev/null || true
+    kubectl logs -n {{ NAMESPACE }} "$K6_POD" -f > /tmp/k6-results.txt 2>&1 &
     LOGS_PID=$!
 
-    # Wait for finish
-    kubectl wait testrun identity-registration-load-test -n {{ NAMESPACE }} \
-        --for=jsonpath='{.status.stage}'=finished --timeout=600s 2>/dev/null || true
-    sleep 2
+    # Wait for the runner Job to complete
+    kubectl wait job/identity-registration-load-test-1 -n {{ NAMESPACE }} \
+        --for=condition=Complete --timeout=600s
+    sleep 1
     kill $LOGS_PID 2>/dev/null || true
+
+    echo ""
+    echo "=== k6 results ==="
+    cat /tmp/k6-results.txt 2>/dev/null || true
+    echo "=================="
 
     echo ""
     echo "Checking results..."

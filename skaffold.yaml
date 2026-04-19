@@ -217,7 +217,6 @@ deploy:
         namespace: k6-operator-system
         repo: "{{.CHARTS_REPO}}"
         remoteChart: k6-operator
-        createNamespace: true
         wait: true
 
 ---

@@ -30,12 +30,16 @@ export default function () {
   const csrfToken = csrfNode?.attributes?.value || '';
 
   // 2. Submit OIDC method — Kratos returns 422 with redirect_browser_to for API flows
+  // Rewrite the action URL: Kratos embeds its public (browser-facing) base URL, which is
+  // unreachable from inside the cluster. Swap it for the in-cluster service URL.
+  const actionUrl = flow.ui.action.replace(/^https?:\/\/[^/]+(\/api\/kratos)?/, KRATOS_URL);
   const oidcRes = http.post(
-    flow.ui.action,
+    actionUrl,
     JSON.stringify({ method: 'oidc', provider: 'mock', csrf_token: csrfToken }),
     {
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       redirects: 0,
+      responseCallback: http.expectedStatuses(200, 302, 422),
     }
   );
   if (!check(oidcRes, { 'oidc redirect received': (r) => r.status === 422 || r.status === 302 })) {
@@ -48,8 +52,18 @@ export default function () {
   authorizeUrl += `&login_hint=vuser-${uuidv4()}@mathtrail.test`;
 
   // 4. Follow the full redirect chain: mock authorize → Kratos OIDC callback → session
-  const callbackRes = http.get(authorizeUrl, { redirects: 10 });
-  check(callbackRes, { 'registration complete': (r) => r.status === 200 });
+  // mock-oauth2-server redirects to Kratos callback using its public (browser-facing) URL,
+  // which is unreachable from inside the cluster. Intercept the 302 and rewrite it.
+  const authorizeRes = http.get(authorizeUrl, { redirects: 0 });
+  let callbackUrl = authorizeRes.headers['Location'];
+  callbackUrl = callbackUrl.replace(/^https?:\/\/[^/]+(\/api\/kratos)?/, KRATOS_URL);
+  // Kratos responds 302 → identity-ui (https://mathtrail.localhost) after successful registration.
+  // Don't follow that redirect — the TLS cert is self-signed and unreachable from the pod.
+  const callbackRes = http.get(callbackUrl, {
+    redirects: 0,
+    responseCallback: http.expectedStatuses(302, 303),
+  });
+  check(callbackRes, { 'registration complete': (r) => r.status === 302 || r.status === 303 });
 
   sleep(1);
 }

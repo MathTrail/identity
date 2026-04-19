@@ -14,3 +14,5 @@ metadata:
 data:
   oidc.google.jsonnet: |
     {{- .Files.Get "files/oidc.google.jsonnet" | nindent 4 }}
+  oidc.mock.jsonnet: |
+    {{- .Files.Get "files/oidc.mock.jsonnet" | nindent 4 }}
