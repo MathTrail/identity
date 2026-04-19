@@ -94,9 +94,22 @@ create-test-user:
 
 # -- Keto Access Management ---------------------------------------------------
 
+# [private] Ensure keto-write port-forward is running on :4467.
+# Starts it in background if not already listening; exported PF_KETO_PID lets
+# the caller clean up. Safe to call even if port-forward is already active.
+_keto-write-pf:
+    #!/bin/bash
+    if ! curl -sf http://localhost:4467/health/alive &>/dev/null; then
+        kubectl port-forward svc/keto-write 4467:80 -n "${IDENTITY_NAMESPACE}" &>/tmp/keto-write-pf.log &
+        for i in $(seq 1 20); do
+            curl -sf http://localhost:4467/health/alive &>/dev/null && break
+            sleep 0.5
+        done
+    fi
+
 # Grant full admin access: monitoring UIs + identity admin UIs
 # Usage: just grant-admin <kratos-user-uuid>
-grant-admin USER_ID:
+grant-admin USER_ID: _keto-write-pf
     #!/bin/bash
     set -eo pipefail
     echo "Granting admin access to {{ USER_ID }}..."
@@ -110,7 +123,7 @@ grant-admin USER_ID:
 
 # Revoke full admin access (monitoring + identity)
 # Usage: just revoke-admin <kratos-user-uuid>
-revoke-admin USER_ID:
+revoke-admin USER_ID: _keto-write-pf
     #!/bin/bash
     set -eo pipefail
     echo "Revoking admin access from {{ USER_ID }}..."
@@ -125,7 +138,7 @@ list-monitoring:
     curl -sf "http://localhost:4466/relation-tuples?namespace=Monitoring&object=ui&relation=viewer" | jq '.relation_tuples[].subject_id'
 
 # Add a Keto relation tuple (teacher -> class)
-add-test-relation:
+add-test-relation: _keto-write-pf
     #!/bin/bash
     set -e
     echo "Adding test relation..."
