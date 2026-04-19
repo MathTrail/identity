@@ -235,6 +235,26 @@ spec:
   tls:
     secretName: mathtrail-tls-secret
 ---
+# ExternalName service: allows identity-namespace IngressRoute to directly reach MinIO console in streaming.
+# Used for OIDC flow paths (/api/v1/login, /oauth_callback) that must bypass Oathkeeper auth.
+# Traefik's CRD provider does not allow cross-namespace service refs without allowCrossNamespace.
+apiVersion: v1
+kind: Service
+metadata:
+  name: streaming-minio-console-ext
+  namespace: {{ .Values.identityNamespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
+spec:
+  type: ExternalName
+  externalName: streaming-minio-console.streaming.svc.cluster.local
+  ports:
+    - port: 9001
+      protocol: TCP
+---
 # MinIO Console subdomain: minio.mathtrail.localhost → Oathkeeper → MinIO Console.
 # Separate host avoids /api/v1 conflict with mentor-api on the main domain.
 ---
@@ -270,6 +290,16 @@ spec:
   entryPoints:
     - websecure
   routes:
+    # OIDC flow endpoints — must bypass Oathkeeper so MinIO can initiate/complete the OAuth2 exchange.
+    # /api/v1/login   — MinIO redirects unauthenticated users here; it starts the Hydra OIDC flow.
+    # /api/v1/logout  — MinIO logout endpoint.
+    # /oauth_callback — Hydra sends the auth code back here; MinIO validates it and issues a session.
+    - match: Host(`minio.{{ .Values.hostname }}`) && (PathPrefix(`/api/v1/login`) || PathPrefix(`/api/v1/logout`) || PathPrefix(`/oauth_callback`))
+      kind: Rule
+      priority: 200
+      services:
+        - name: streaming-minio-console-ext
+          port: 9001
     - match: Host(`minio.{{ .Values.hostname }}`)
       kind: Rule
       middlewares:

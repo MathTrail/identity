@@ -57,6 +57,17 @@ oathkeeper:
       api:
         port: 4456
 
+    errors:
+      fallback:
+        - json
+      handlers:
+        json:
+          enabled: true
+        redirect:
+          enabled: true
+          config:
+            to: https://mathtrail.localhost/auth/login
+
     access_rules:
       repositories:
         - file:///etc/rules/access-rules.json
@@ -286,6 +297,10 @@ oathkeeper:
             }
       mutators:
         - handler: noop
+      errors:
+        - handler: redirect
+          config:
+            to: https://mathtrail.localhost/auth/login?return_to=https://minio.mathtrail.localhost/
 
     # RisingWave static assets — anonymous (/_next/static/... chunks).
     # Bypasses Keto to prevent connection saturation when ~20 JS chunks load in parallel.
