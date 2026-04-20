@@ -117,7 +117,7 @@ oathkeeper:
 
     - id: "mathtrail-mentor-swagger-rule"
       upstream:
-        url: "http://mentor-api.mathtrail.svc.cluster.local:8080"
+        url: "http://mentor-api.mathtrail.svc.cluster.local:8080/swagger"
         strip_path: "/swagger/mentor"
       match:
         methods: ["GET"]
