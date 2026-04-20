@@ -167,6 +167,25 @@ spec:
     address: "http://oathkeeper-api.{{ .Values.identityNamespace }}.svc.cluster.local:4456/decisions"
     trustForwardHeader: true
 ---
+# Swagger mentor trailing-slash redirect: gin-swagger 301s to /swagger/index.html (no prefix)
+# when the request path ends with /. Catch /swagger/mentor and /swagger/mentor/ at Traefik
+# and redirect to /swagger/mentor/index.html so the prefix is preserved through Oathkeeper.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-swagger-mentor-slash
+  namespace: {{ .Values.identityNamespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
+spec:
+  redirectRegex:
+    regex: "^https://{{ .Values.hostname }}/swagger/mentor/?$"
+    replacement: "https://{{ .Values.hostname }}/swagger/mentor/index.html"
+    permanent: false
+---
 # Apicurio root redirect: / → /apis (the actual UI path in Apicurio 3.x).
 # Apicurio generates an absolute redirect using its cluster-internal hostname,
 # so we intercept at Traefik before the request reaches Oathkeeper/Apicurio.

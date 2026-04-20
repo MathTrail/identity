@@ -48,6 +48,17 @@ spec:
         - name: oathkeeper-proxy
           port: 4455
 
+    # Swagger mentor trailing-slash redirect — gin-swagger 301s to /swagger/index.html (no prefix)
+    # when path ends with /. Redirect to /swagger/mentor/index.html before hitting Oathkeeper.
+    - match: Host(`{{ .Values.hostname }}`) && PathRegexp(`^/swagger/mentor/?$`)
+      kind: Rule
+      priority: 200
+      middlewares:
+        - name: redirect-swagger-mentor-slash
+      services:
+        - name: oathkeeper-proxy
+          port: 4455
+
     # API and Swagger — relaxed rate limit + circuit breaker
     - match: Host(`{{ .Values.hostname }}`) && (PathPrefix(`/api/`) || PathPrefix(`/swagger/`))
       kind: Rule
