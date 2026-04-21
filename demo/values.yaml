@@ -75,15 +75,11 @@ sql: |
       PRIMARY KEY (id)
   ) FROM kratos_pg_cdc TABLE 'public.identity_verifiable_addresses';
 
-  -- 3. Materialized View — join CDC tables, produce StudentOnboardingReady event
-  --
-  --    IMPORTANT: traits structure matches Kratos identity schema (identity.schema.json).
-  --    Traits are stored as: {"email": "...", "name": {"first": "...", "last": "..."}, "role": "..."}
-  --    Verify against: SELECT traits FROM identities LIMIT 1;
-  --
-  --    NOTE: gen_random_uuid() and NOW() in SELECT are not available in RisingWave streaming MVs.
-  --    event_id is derived deterministically from identity + address IDs via md5().
-  --    occurred_at uses i.created_at (the source record timestamp).
+  -- 3. Drop v1 sink and MV before recreating with the new schema
+  DROP SINK IF EXISTS students_onboarding_sink;
+  DROP MATERIALIZED VIEW IF EXISTS students_onboarding_ready CASCADE;
+
+  -- 4. Materialized View v2 — adds schema_id column
   CREATE MATERIALIZED VIEW IF NOT EXISTS students_onboarding_ready AS
   SELECT
       md5(i.id || iva.id)             AS event_id,
@@ -92,19 +88,15 @@ sql: |
       i.traits->'name'->>'first'      AS first_name,
       i.traits->'name'->>'last'       AS last_name,
       'student'                       AS role,
-      i.created_at::VARCHAR           AS occurred_at
+      i.created_at::VARCHAR           AS occurred_at,
+      i.schema_id                     AS schema_id
   FROM identities i
   JOIN identity_verifiable_addresses iva
     ON iva.identity_id = i.id
   WHERE iva.via = 'email'
     AND i.state = 'active';
 
-  -- 4. Kafka Sink → AutoMQ
-  --    FORMAT PLAIN ENCODE PROTOBUF: produces Confluent Wire Format bytes
-  --    schema_id resolved from Apicurio ccompat API by subject name.
-  --    force_append_only='true': required because JOIN produces a retract stream;
-  --    DELETE/UPDATE events are dropped (onboarding is an insert-only event).
-  --    NOTE: AutoMQ local dev uses PLAINTEXT listener — no SASL required.
+  -- 5. Kafka Sink v2 → AutoMQ
   CREATE SINK IF NOT EXISTS students_onboarding_sink
   FROM students_onboarding_ready
   WITH (
@@ -114,6 +106,6 @@ sql: |
   )
   FORMAT PLAIN ENCODE PROTOBUF (
       schema.registry   = '${APICURIO_URL}',
-      message           = 'students.v1.StudentOnboardingReady',
+      message           = 'students.v2.StudentOnboardingReady',
       force_append_only = 'true'
   );
