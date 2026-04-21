@@ -117,3 +117,45 @@ sql: |
       message           = 'students.v1.StudentOnboardingReady',
       force_append_only = 'true'
   );
+
+  -- ===========================================================================
+  -- DEMO: Upgrade to v2 — uncomment the block below and helm upgrade.
+  --
+  -- Prerequisites:
+  --   1. students.v2.StudentOnboardingReady registered in Apicurio
+  --      (uncomment v2 entry in identity-schema-registration/values.yaml first)
+  --
+  -- The MV definition changed (new column schema_id), so IF NOT EXISTS is NOT
+  -- enough — we must drop and recreate the MV and the sink.
+  -- ===========================================================================
+  -- DROP SINK IF EXISTS students_onboarding_sink;
+  -- DROP MATERIALIZED VIEW IF EXISTS students_onboarding_ready CASCADE;
+  --
+  -- CREATE MATERIALIZED VIEW IF NOT EXISTS students_onboarding_ready AS
+  -- SELECT
+  --     md5(i.id || iva.id)             AS event_id,
+  --     i.id                            AS user_id,
+  --     iva.value                       AS email,
+  --     i.traits->'name'->>'first'      AS first_name,
+  --     i.traits->'name'->>'last'       AS last_name,
+  --     'student'                       AS role,
+  --     i.created_at::VARCHAR           AS occurred_at,
+  --     i.schema_id                     AS schema_id
+  -- FROM identities i
+  -- JOIN identity_verifiable_addresses iva
+  --   ON iva.identity_id = i.id
+  -- WHERE iva.via = 'email'
+  --   AND i.state = 'active';
+  --
+  -- CREATE SINK IF NOT EXISTS students_onboarding_sink
+  -- FROM students_onboarding_ready
+  -- WITH (
+  --     connector                   = 'kafka',
+  --     properties.bootstrap.server = '${AUTOMQ_BOOTSTRAP_SERVER}',
+  --     topic                       = 'students.onboarding.ready'
+  -- )
+  -- FORMAT PLAIN ENCODE PROTOBUF (
+  --     schema.registry   = '${APICURIO_URL}',
+  --     message           = 'students.v2.StudentOnboardingReady',
+  --     force_append_only = 'true'
+  -- );
