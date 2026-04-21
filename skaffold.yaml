@@ -49,6 +49,7 @@ deploy:
         repo: "{{.CHARTS_REPO}}"
         remoteChart: schema-registration
         namespace: "{{.IDENTITY_NAMESPACE}}"
+        upgradeOnChange: true
         wait: true
         valuesFiles:
           - infra/helm/identity-schema-registration/values.yaml
@@ -59,6 +60,7 @@ deploy:
         remoteChart: kratos
         namespace: "{{.IDENTITY_NAMESPACE}}"
         createNamespace: true
+        upgradeOnChange: true
         valuesFiles:
           - values/kratos-values.yaml
         wait: true
@@ -67,6 +69,7 @@ deploy:
         repo: "{{.CHARTS_REPO}}"
         remoteChart: hydra
         namespace: "{{.IDENTITY_NAMESPACE}}"
+        upgradeOnChange: true
         valuesFiles:
           - values/hydra-values.yaml
         wait: true
@@ -75,6 +78,7 @@ deploy:
         repo: "{{.CHARTS_REPO}}"
         remoteChart: keto
         namespace: "{{.IDENTITY_NAMESPACE}}"
+        upgradeOnChange: true
         valuesFiles:
           - values/keto-values.yaml
         wait: true
@@ -83,6 +87,7 @@ deploy:
         repo: "{{.CHARTS_REPO}}"
         remoteChart: oathkeeper
         namespace: "{{.IDENTITY_NAMESPACE}}"
+        upgradeOnChange: true
         valuesFiles:
           - values/oathkeeper-values.yaml
         wait: true
@@ -92,6 +97,7 @@ deploy:
         repo: "{{.CHARTS_REPO}}"
         remoteChart: risingwave-cdc-setup
         namespace: "{{.IDENTITY_NAMESPACE}}"
+        upgradeOnChange: true
         wait: true
         valuesFiles:
           - infra/helm/identity-cdc-setup/values.yaml
