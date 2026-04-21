@@ -25,22 +25,3 @@ schemas:
         string role       = 6;
         string occurred_at = 7;
       }
-
-  - subject: "students.v2.StudentOnboardingReady"
-    # Source: contracts/proto/students/v2/events.proto
-    # Produced by: RisingWave CDC sink (topic: students.onboarding.ready)
-    # Consumed by: mentor-api
-    proto: |
-      syntax = "proto3";
-      package students.v2;
-      option go_package = "github.com/mathtrail/contracts/gen/go/students/v2;studentsv2";
-      message StudentOnboardingReady {
-        string event_id    = 1;
-        string user_id     = 2;
-        string email       = 3;
-        string first_name  = 4;
-        string last_name   = 5;
-        string role        = 6;
-        string occurred_at = 7;
-        string schema_id   = 8;
-      }
