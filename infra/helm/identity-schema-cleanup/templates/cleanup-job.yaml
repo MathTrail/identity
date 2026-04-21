@@ -1,0 +1,86 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-cleanup
+  labels:
+    app.kubernetes.io/name: identity-schema-cleanup
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    # Weight 6 — must run BEFORE identity-schema-registration (weight 8)
+    "helm.sh/hook-weight": "6"
+spec:
+  backoffLimit: {{ .Values.backoffLimit }}
+  ttlSecondsAfterFinished: {{ .Values.ttlSecondsAfterFinished }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: identity-schema-cleanup
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      restartPolicy: {{ .Values.restartPolicy }}
+      initContainers:
+        - name: wait-apicurio
+          image: curlimages/curl:8.7.1
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Apicurio Registry..."
+              i=0
+              until curl -sf "${APICURIO_URL}/apis/registry/v3/system/info" >/dev/null; do
+                i=$((i+1))
+                if [ "$i" -ge 20 ]; then
+                  echo "Apicurio not ready after 60s, giving up." >&2
+                  exit 1
+                fi
+                echo "  not ready, retrying in 3s... ($i/20)"
+                sleep 3
+              done
+              echo "Apicurio is ready."
+          env:
+            - name: APICURIO_URL
+              value: {{ .Values.apicurioUrl | quote }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 100
+      containers:
+        - name: delete-subjects
+          image: curlimages/curl:8.7.1
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              # SUBJECTS is a comma-separated list injected by Helm
+              IFS=','
+              for subject in $SUBJECTS; do
+                echo "Deleting subject: $subject"
+                HTTP_CODE=$(curl -s -o /tmp/r.json -w "%{http_code}" \
+                  -X DELETE \
+                  "${APICURIO_URL}/apis/ccompat/v7/subjects/${subject}")
+                if [ "$HTTP_CODE" = "200" ]; then
+                  echo "  -> deleted"
+                elif [ "$HTTP_CODE" = "404" ]; then
+                  echo "  -> not found, skipping (idempotent)"
+                else
+                  echo "  ERROR: HTTP $HTTP_CODE for subject '$subject'" >&2
+                  cat /tmp/r.json >&2
+                  exit 1
+                fi
+              done
+              echo "Cleanup complete."
+          env:
+            - name: APICURIO_URL
+              value: {{ .Values.apicurioUrl | quote }}
+            - name: SUBJECTS
+              value: {{ .Values.subjects | join "," | quote }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 100
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

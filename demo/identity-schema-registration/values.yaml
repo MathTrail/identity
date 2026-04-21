@@ -9,10 +9,11 @@ hookWeight: "8"
 
 schemas:
   - subject: "students.onboarding.ready-value"
+    # Subject uses TopicNameStrategy ('{topic}-value') — hardcoded in this RisingWave build.
+    # NOTE: only ONE version must exist under this subject when using v2.
     # Source: contracts/proto/students/v2/events.proto
     # Produced by: RisingWave CDC sink (topic: students.onboarding.ready)
     # Consumed by: mentor-api
-    # NOTE: must match `message = 'students.v2.StudentOnboardingReady'` in CREATE SINK
     proto: |
       syntax = "proto3";
       package students.v2;

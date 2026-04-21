@@ -1,0 +1,9 @@
+apiVersion: v2
+name: identity-schema-cleanup
+description: >
+  Deletes Apicurio schema subjects before re-registration.
+  Must run as a pre-install,pre-upgrade hook BEFORE identity-schema-registration
+  so that the schema-registration job always registers the current version as
+  the only (and therefore latest) version under the subject.
+type: application
+version: 0.1.0

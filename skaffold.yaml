@@ -44,6 +44,17 @@ deploy:
         setValues:
           db.postgresHost: identity-postgres-postgresql
 
+      # --- Schema cleanup (runs before schema registration on every deploy) ---
+      # Deletes Apicurio subjects so schema-registration always registers the
+      # current version as the only (latest) version. Enables safe rollback:
+      # rolling back values.yaml re-registers the old schema as the sole version.
+      - name: identity-schema-cleanup
+        chartPath: infra/helm/identity-schema-cleanup
+        namespace: "{{.IDENTITY_NAMESPACE}}"
+        wait: true
+        valuesFiles:
+          - infra/helm/identity-schema-cleanup/values.yaml
+
       # --- Schema registration (runs after DB init, before Ory services) ---
       - name: identity-schema-registration
         repo: "{{.CHARTS_REPO}}"

@@ -9,6 +9,10 @@ hookWeight: "8"
 
 schemas:
   - subject: "students.onboarding.ready-value"
+    # Subject uses TopicNameStrategy ('{topic}-value') — hardcoded in this RisingWave build.
+    # RisingWave ignores schema.registry.name.strategy and always requests this subject.
+    # NOTE: only ONE version must exist under this subject. If schema changes, delete
+    # the old version from Apicurio before deploying the new one (or use a new topic).
     # Source: contracts/proto/students/v1/events.proto
     # Produced by: RisingWave CDC sink (topic: students.onboarding.ready)
     # Consumed by: mentor-api

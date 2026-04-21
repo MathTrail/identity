@@ -1,0 +1,34 @@
+# =======================================================================
+# identity-schema-cleanup :: values.yaml
+# Deletes Apicurio subjects before schema-registration re-registers them.
+#
+# WHY THIS EXISTS:
+#   RisingWave (nightly-20260410) hardcodes TopicNameStrategy — it always
+#   requests '{topic}-value/versions/latest' from Apicurio.
+#   The schema-registration chart treats HTTP 409 (already exists) as success,
+#   so it never replaces an existing version — the old version stays as 'latest'.
+#   This chart deletes the subject entirely so the next registration always
+#   produces exactly one version (the current one), which becomes 'latest'.
+#
+# SAFE TO RUN ON EVERY DEPLOY:
+#   HTTP 404 (subject not found) is treated as success — idempotent.
+# =======================================================================
+
+apicurioUrl: "http://streaming-apicurio-apicurio-registry.streaming.svc.cluster.local:8080"
+
+# Apicurio subjects to delete before schema registration.
+# Add every subject managed by identity-schema-registration here.
+subjects:
+  - "students.onboarding.ready-value"
+
+backoffLimit: 3
+ttlSecondsAfterFinished: 300
+restartPolicy: OnFailure
+
+resources:
+  requests:
+    cpu: "50m"
+    memory: "32Mi"
+  limits:
+    cpu: "100m"
+    memory: "64Mi"

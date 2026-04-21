@@ -105,7 +105,9 @@ sql: |
 
   -- 5. Kafka Sink → AutoMQ
   --    FORMAT PLAIN ENCODE PROTOBUF: produces Confluent Wire Format bytes
-  --    schema_id resolved from Apicurio ccompat API by subject name.
+  --    RisingWave resolves schema by subject '{topic}-value' (TopicNameStrategy, hardcoded).
+  --    schema.registry.name.strategy is NOT supported in this RisingWave build —
+  --    the connector always requests 'students.onboarding.ready-value' from Apicurio.
   --    force_append_only='true': required because JOIN produces a retract stream;
   --    DELETE/UPDATE events are dropped (onboarding is an insert-only event).
   --    NOTE: AutoMQ local dev uses PLAINTEXT listener — no SASL required.
