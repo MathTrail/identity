@@ -29,18 +29,7 @@ graph LR
 
     subgraph Downstream ["Downstream Services"]
         direction TB
-        MentorAPI["mentor-api"]
-        Grafana["Grafana"]
-        Pyroscope["Pyroscope"]
-        KafkaUI["Kafka UI"]
-        Apicurio["Apicurio"]
-        EventCatalog["EventCatalog"]
-        MinIO["MinIO Console"]
-        KratosAdmin["Kratos Admin"]
-        HydraAdmin["Hydra Admin"]
-        KetoRead["Keto Read"]
-        OathkeeperAPI["Oathkeeper API"]
-        ArgoCD["ArgoCD"]
+      DownstreamAll["Downstream Services"]
     end
 
     subgraph Secrets ["Secrets"]
@@ -53,18 +42,7 @@ graph LR
     Browser -- "all API traffic" --> OK
     OK -- "whoami check" --> Kratos
     OK -- "authz check" --> Keto
-    OK -- "proxy" --> MentorAPI
-    OK -- "proxy + X-Webauth-*" --> Grafana
-    OK -- "proxy" --> Pyroscope
-    OK -- "proxy" --> KafkaUI
-    OK -- "proxy" --> Apicurio
-    OK -- "proxy" --> EventCatalog
-    OK -- "proxy" --> MinIO
-    OK -- "proxy" --> KratosAdmin
-    OK -- "proxy" --> HydraAdmin
-    OK -- "proxy" --> KetoRead
-    OK -- "proxy" --> OathkeeperAPI
-    OK -- "proxy" --> ArgoCD
+    OK -- "proxy" --> DownstreamAll
     Hydra -- "consent UI" --> UI
     ESO -- "DSN secrets" --> Kratos & Hydra & Keto
 
@@ -83,7 +61,7 @@ graph LR
     class PGB,PG dataCls
     class Vault,ESO secretCls
     class Browser actorCls
-    class MentorAPI,Grafana,Pyroscope,KafkaUI,Apicurio,EventCatalog,MinIO,KratosAdmin,HydraAdmin,KetoRead,OathkeeperAPI,ArgoCD dstCls
+    class DownstreamAll dstCls
 ```
 
 ## Quick Start
