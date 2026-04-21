@@ -75,7 +75,11 @@ sql: |
       PRIMARY KEY (id)
   ) FROM kratos_pg_cdc TABLE 'public.identity_verifiable_addresses';
 
-  -- 3. Materialized View — join CDC tables, produce StudentOnboardingReady event
+  -- 3. Drop sink and MV before recreating with the new schema
+  DROP SINK IF EXISTS students_onboarding_sink;
+  DROP MATERIALIZED VIEW IF EXISTS students_onboarding_ready CASCADE;
+
+  -- 4. Materialized View — join CDC tables, produce StudentOnboardingReady event
   --
   --    IMPORTANT: traits structure matches Kratos identity schema (identity.schema.json).
   --    Traits are stored as: {"email": "...", "name": {"first": "...", "last": "..."}, "role": "..."}
@@ -99,7 +103,7 @@ sql: |
   WHERE iva.via = 'email'
     AND i.state = 'active';
 
-  -- 4. Kafka Sink → AutoMQ
+  -- 5. Kafka Sink → AutoMQ
   --    FORMAT PLAIN ENCODE PROTOBUF: produces Confluent Wire Format bytes
   --    schema_id resolved from Apicurio ccompat API by subject name.
   --    force_append_only='true': required because JOIN produces a retract stream;
