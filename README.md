@@ -27,10 +27,7 @@ graph LR
         Keto --> PGB
     end
 
-    subgraph Downstream ["Downstream Services"]
-        direction TB
-      DownstreamAll["Downstream Services"]
-    end
+    DownstreamAll["Downstream Services"]
 
     subgraph Secrets ["Secrets"]
         direction TB
